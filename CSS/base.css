@@ -1,0 +1,230 @@
+@charset "UTF-8";
+/* CSS Document */
+
+:root {
+  --color-background: rgb(44, 54, 64);
+  --color-foreground: rgb(255, 255, 255);
+  --color-text: rgb(51, 57, 63);
+  --color-tonic: rgb(0, 102, 153);
+  --color-mediant: rgb(0, 119, 180);
+  --color-dominant: rgb(51, 153, 204);
+  --color-accent: rgb(255, 204, 51);
+  --color-accent-backup: rgb(72, 88, 104);
+
+  --global-corner-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: rgb(255, 255, 255);
+    --color-foreground: rgb(44, 54, 64);
+    --color-text: rgb(255, 255, 255);
+    --color-tonic: rgb(0, 102, 153);
+    --color-mediant: rgb(0, 119, 180);
+    --color-dominant: rgb(51, 153, 204);
+    --color-accent: rgb(255, 204, 51);
+    --color-accent-backup: rgb(72, 88, 104);
+  }
+}
+
+html,
+body {
+  background-color: var(--color-foreground);
+  color: var(--color-text);
+  font-family: Arial;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+p {
+  margin: 4px 0;
+}
+
+/* - - - - - - - - - CONTENT - - - - - - - - - */
+
+.content {
+  aspect-ratio: 960 / 540;
+
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-container {
+  box-shadow: 0 0 10px 0 black;
+  display: flex;
+  flex-grow: 1;
+  margin-top: 20px;
+  padding: 0;
+  text-align: center;
+}
+
+canvas {
+  height: 100%;
+  width: 100%;
+}
+
+.footer-control-container {
+  flex-basis: 0 0;
+  margin-top: 20px;
+}
+
+.horizontal-controls {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+}
+
+button {
+  border-radius: var(--global-corner-radius);
+  border: 1px solid var(--color-background);
+  background-color: var(--color-foreground);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+  margin: 6px 0;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 6px;
+}
+
+#last-canvas-image {
+  background: url() no-repeat center/cover;
+  float: right;
+  height: 52px;
+  margin: 2px 0;
+  padding: 0;
+  width: 52px;
+}
+
+#slider-line-width-container {
+  flex-basis: 0 0;
+}
+
+.slider {
+  background: url(../images/grid_repeat_60.png) repeat center/contain;
+  background-color: grey;
+  display: block;
+  cursor: pointer;
+  width: 340px;
+  margin: 0;
+  overflow-y: visible;
+  padding: 0;
+  position: relative;
+  height: 30px;
+}
+.slider:hover div:last-child {
+  background-color: var(--color-accent);
+
+}
+
+.slider div:first-child {
+  background-color: black;
+  height: 100%;
+  left: 0;
+  top: 0;
+  /* right: 0; */
+  position: absolute;
+}
+
+.slider div:last-child {
+  /* border: 1px solid white; */
+  background-color: var(--color-tonic);
+  display: block;
+  height: 100%;
+  padding: 3px 0;
+  transform: translateY(-3px);
+  width: 10px;
+}
+
+.color-palette {
+  border: 1px solid white;
+  border-radius: var(--global-corner-radius);
+  list-style: none;
+  display: flex;
+  flex-grow: 1;
+  flex-direction: row;
+  height: 30px;
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+}
+.color-palette li {
+  flex-grow: 1;
+  cursor: pointer;
+}
+.color-palette li.selected {
+  background: url(../images/target_inner_icon.png) no-repeat center/contain;
+}
+.color-palette li.selected:hover {
+  background: url(../images/target_icon.png) no-repeat center/contain;
+}
+.color-palette li:hover {
+  background: url(../images/target_outer_icon.png) no-repeat center/contain;
+}
+
+.toggle {
+  background-color: var(--color-background);
+  border: 4px solid var(--color-text);
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-block;
+  height: 14px;
+  width: 14px;
+}
+.toggle:hover {
+  border: 4px solid var(--color-accent);
+}
+.toggle.toggled {
+  background-color: var(--color-foreground);
+}
+
+.textfield {
+  border: 1px solid var(--color-foreground);
+  border-radius: 6px;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  height: 18px;
+  margin: 0 4px;
+  text-align: center;
+  width: 40px;
+}
+
+select {
+  margin: 0;
+  padding: 0;
+}
+
+#style-override-button {
+  border: 0;
+  color: grey;
+  margin: 30px 110px;
+  padding: 0;
+  text-align: center;
+}
+#style-override-button:hover {
+  color: white;
+}
+
+#style-overrides-container {
+  display: none;
+}
+
+.horizontal-controls button {
+  margin: 0;
+}
+
+#button-clear {
+  background: url(../images/icon_trash_alt.png) no-repeat center/contain;
+}
+
+#button-eraser {
+  background: url(../images/eraser_icon.png) no-repeat center/contain;
+}

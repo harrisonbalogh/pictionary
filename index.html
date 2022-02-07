@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta
+      http-equiv="cache-control"
+      content="no-cache, must-revalidate, post-check=0, pre-check=0"
+    />
+    <title>CrypticWisps - Visual Designer</title>
+    <link rel="stylesheet" type="text/css" href="CSS/base.css" />
+    <link rel="icon" href="" />
+  </head>
+
+  <body>
+    <div class="content">
+
+      <div class="canvas-container" id="content">
+        <canvas id="bgCanvas" width="960" height="540"></canvas>
+      </div>
+
+      <div class="footer-control-container">
+        <div class="horizontal-controls">
+          <div id="slider-line-width-container">
+            <div class="slider" id="slider-line-width"><div></div><div></div></div>
+              <p id="slider-label-line-width">Brush Width</p>
+          </div>
+          <ul id="color-palette" class="color-palette">
+            <li style="background-color: green"></li>
+            <li style="background-color: lawngreen"></li>
+            <li style="background-color: yellow"></li>
+            <li style="background-color: orange"></li>
+            <li style="background-color: chocolate"></li>
+            <li style="background-color: sienna"></li>
+            <li style="background-color: brown"></li>
+            <li style="background-color: red"></li>
+            <li style="background-color: violet"></li>
+            <li style="background-color: blueviolet"></li>
+            <li style="background-color: blue"></li>
+            <li style="background-color: steelblue"></li>
+            <li style="background-color: teal"></li>
+            <li style="background-color: aqua"></li>
+            <li style="background-color: black"></li>
+            <li style="background-color: white"></li>
+          </ul>
+          <!-- <button id="button-eraser" title="eraser"></button> -->
+          <button id="button-clear" title="clear"></button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <script type='module' src="javascript/core.js"></script>
+  </body>
+</html>
