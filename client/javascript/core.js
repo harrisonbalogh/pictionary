@@ -1,6 +1,8 @@
 import * as Ui from './ui.js'
 
+let canvasOverlayElement = Ui.canvasFg();
 let canvasElement = Ui.canvasBg();
+let canvasOverlayContext = canvasOverlayElement.getContext('2d') // World entities
 let canvasContext = canvasElement.getContext('2d') // World entities
 let view = {
   width: 960,
@@ -14,10 +16,7 @@ let view = {
 let drawStyle = {
   color: 'black', // Default color
 
-  // lineWidth: 4,
-  _lineWidth: 4,
-  set lineWidth(val) { this._lineWidth = val; },
-  get lineWidth() { return this._lineWidth * view.scale; },
+  lineWidth: 4,
 
   setColor: function(color) {
     this.color = color
@@ -37,55 +36,105 @@ function syncCanvasSize() {
   // Reset line width at new resolution
   canvasContext.lineWidth = drawStyle.lineWidth;
   canvasContext.lineCap = "round";
+  canvasOverlayContext.lineWidth = drawStyle.lineWidth;
+  canvasOverlayContext.lineCap = "round";
 }
 window.addEventListener('resize', syncCanvasSize);
+
+function clearBrushIndicator() {
+  // Clear old circle
+  canvasOverlayContext.clearRect(0, 0, view.width, view.height)
+}
+function drawBrushIndicator(brushX, brushY) {
+  // Maintain the same stroke scale through resolution changes
+  let lineWidth = Math.max(1 / view.scale, 1);
+  canvasOverlayContext.lineWidth = lineWidth;
+
+  clearBrushIndicator();
+
+  // Outer white highlight for better standout
+  canvasOverlayContext.strokeStyle = drawStyle.color == 'white' ? 'black' : 'white'
+  canvasOverlayContext.beginPath();
+  canvasOverlayContext.arc(brushX, brushY, drawStyle.lineWidth / 2, 0, 2 * Math.PI);
+  canvasOverlayContext.stroke();
+
+  // Matching brush color indicator
+  canvasOverlayContext.strokeStyle = drawStyle.color
+  canvasOverlayContext.beginPath();
+  // - Inset arc by width of stroke line to only indicate where the inclusive boundary of the fill() would be
+  canvasOverlayContext.arc(brushX, brushY, Math.max(drawStyle.lineWidth / 2 - lineWidth, 0.5), 0, 2 * Math.PI);
+  canvasOverlayContext.stroke();
+}
 
 function initUi() {
   // Set background
   canvasContext.fillStyle = 'white';
   canvasContext.fillRect(0, 0, view.width, view.height)
 
-  canvasElement.addEventListener('mousedown', e => {
+  function canvasMouse(e) {
+    var rect = canvasOverlayElement.getBoundingClientRect()
+    let brushX = Math.floor(e.clientX - rect.left) / view.scale
+    let brushY = (e.clientY - rect.top) / view.scale
+    return { brushX, brushY }
+  }
+
+  function hoverBrush(e) {
     e.preventDefault();
-    var rectDown = canvasElement.getBoundingClientRect()
-    let brushXDown = Math.floor(e.clientX - rectDown.left) / view.scale
-    let brushYDown = (e.clientY - rectDown.top) / view.scale
+    const { brushX, brushY } = canvasMouse(e);
+
+    drawBrushIndicator(brushX, brushY);
+  }
+
+  // Brush size indicator while mouse is up
+  canvasOverlayElement.addEventListener('mousemove', hoverBrush);
+  canvasOverlayElement.addEventListener('mouseleave', clearBrushIndicator);
+
+  canvasOverlayElement.addEventListener('mousedown', e => {
+    e.preventDefault();
+    const { brushX, brushY } = canvasMouse(e);
+    // Initial paint from brush down
     canvasContext.beginPath();
-    canvasContext.arc(brushXDown, brushYDown, drawStyle.lineWidth / 2, 0, 2 * Math.PI);
+    canvasContext.arc(brushX, brushY, drawStyle.lineWidth / 2, 0, 2 * Math.PI);
     canvasContext.fill();
-
+    // Set first point for brush movement
     canvasContext.beginPath();
-    canvasContext.moveTo(brushXDown, brushYDown);
-
-    let prevFrame = { brushX: brushXDown, brushY: brushYDown }
+    canvasContext.moveTo(brushX, brushY);
 
     const moveBrush = e => {
       e.preventDefault();
-      var rect = canvasElement.getBoundingClientRect()
-      let brushX = Math.floor(e.clientX - rect.left) / view.scale
-      let brushY = (e.clientY - rect.top) / view.scale
+      const { brushX, brushY } = canvasMouse(e);
+
+      drawBrushIndicator(brushX, brushY);
 
       canvasContext.lineTo(brushX, brushY);
       canvasContext.stroke();
 
-      // Reset
+      // Reset first point
       canvasContext.beginPath();
       canvasContext.moveTo(brushX, brushY);
-
-      prevFrame = { brushX, brushY }
     }
 
-    const releaseBrush = _ => {
+    const releaseBrush = e => {
       // Brush mouse-down released, cleanup post-mousedown listeners
       document.removeEventListener('mousemove', moveBrush);
       document.removeEventListener('mouseleave', releaseBrush);
       document.removeEventListener('mouseup', releaseBrush);
+      canvasOverlayElement.addEventListener('mousemove', hoverBrush);
+      canvasOverlayElement.addEventListener('mouseleave', clearBrushIndicator);
+
+      const { brushX, brushY } = canvasMouse(e);
+      if (brushY < 0 || brushY > view.height || brushX < 0 || brushX > view.width) {
+        // Released mouse offscreen, clear indicator
+        clearBrushIndicator();
+      }
     };
 
     // Brush mouse-down held, add listeners. These all need to be removed on release
     document.addEventListener('mousemove', moveBrush);
     document.addEventListener('mouseleave', releaseBrush);
     document.addEventListener('mouseup', releaseBrush);
+    canvasOverlayElement.removeEventListener('mousemove', hoverBrush);
+    canvasOverlayElement.removeEventListener('mouseleave', clearBrushIndicator);
   })
 
   Ui.sliderLineWidth.notifyValueChange = val => {
@@ -93,6 +142,7 @@ function initUi() {
     Ui.sliderLabelLineWidth.innerHTML = `Line Width: ${floorVal}`;
     drawStyle.lineWidth = floorVal;
     canvasContext.lineWidth = floorVal;
+    drawBrushIndicator(view.width / 2, view.height / 2)
   }
   Ui.sliderLabelLineWidth.innerHTML = `Line Width: ${Math.floor(parseInt(drawStyle.lineWidth))}`;
   Ui.sliderLineWidth.setValue(drawStyle.lineWidth)

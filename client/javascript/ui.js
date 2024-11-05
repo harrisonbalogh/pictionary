@@ -1,4 +1,6 @@
+let _canvasFg = document.getElementById('fgCanvas')
 let _canvasBg = document.getElementById('bgCanvas')
+export const canvasFg = () => _canvasFg
 export const canvasBg = () => _canvasBg
 
 export const content = document.getElementById('content')
@@ -48,6 +50,7 @@ class Slider {
   handleMouseDown(e) {
     if (currentSliderActive != null) currentSliderActive.handleMouseLeave()
     currentSliderActive = this
+    this.handleMouseMove(e);
     e.preventDefault();
     return false
   }
@@ -82,7 +85,7 @@ class Toggle {
   }
 }
 
-export const sliderLineWidth = new Slider(document.getElementById('slider-line-width'), 2, 100)
+export const sliderLineWidth = new Slider(document.getElementById('slider-line-width'), 1, 100)
 export const sliderLabelLineWidth = document.getElementById('slider-label-line-width')
 // export const colorOutline = document.getElementById('color-outline')
 
@@ -91,6 +94,8 @@ export const buttonClear = document.getElementById('button-clear')
 export const colorPalette = document.getElementById('color-palette');
 
 export function syncCanvasSize() {
+  _canvasFg.width = _canvasFg.offsetWidth * 2
+  _canvasFg.height = _canvasFg.offsetHeight * 2
   _canvasBg.width = _canvasBg.offsetWidth * 2
   _canvasBg.height = _canvasBg.offsetHeight * 2
 }

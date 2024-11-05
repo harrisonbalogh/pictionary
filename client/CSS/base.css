@@ -61,12 +61,21 @@ p {
   flex-grow: 1;
   margin-top: 20px;
   padding: 0;
+  position: relative;
   text-align: center;
 }
 
 canvas {
   height: 100%;
   width: 100%;
+}
+
+#fgCanvas {
+  bottom: 0;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
 }
 
 .footer-control-container {
