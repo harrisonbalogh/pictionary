@@ -15,22 +15,28 @@
     <div class="content">
 
       <div class="header">
-        <p style="display: inline-block">User ID:</p>
-        <p id="label-lobby-user-id" class='disabled' style="display: inline-block">-</p>
+        <p style="display: inline-block">User:</p>
+        <p id="label-user-id" class='disabled' style="display: inline-block">-</p>
         <div></div>
-        <p style="display: inline-block">Other Users:</p>
-        <p id="label-lobby-users" style="display: inline-block">-</p>
+        <p style="display: inline-block">Lobby ID:</p>
+        <p id="label-lobby-id" style="display: inline-block">-</p>
         <div></div>
         <p style="display: inline-block">Owner:</p>
         <p id="label-lobby-owner" style="display: inline-block">-</p>
+        <div></div>
+        <p style="display: inline-block">Lobby Users:</p>
+        <p id="label-lobby-users" style="display: inline-block">-</p>
+        <div></div>
+        <p style="display: inline-block">Painter:</p>
+        <p id="label-lobby-painter" style="display: inline-block">-</p>
       </div>
 
-      <div id="content" class="canvas-container disabled">
+      <div id="content" class="canvas-container hidden">
         <canvas id="bgCanvas" width="960" height="540"></canvas>
         <canvas id="fgCanvas" width="960" height="540"></canvas>
       </div>
 
-      <div id="footer-controls" class="footer-control-container disabled">
+      <div id="footer-controls" class="footer-control-container hidden">
         <div class="horizontal-controls">
           <div id="slider-line-width-container">
             <div class="slider" id="slider-line-width"><div></div><div></div></div>
@@ -58,6 +64,24 @@
           <button id="button-clear" title="clear"></button>
         </div>
       </div>
+
+      <input id="input-lobby-join" class="hidden" title="lobby-join"></input>
+      <button id="button-lobby-join" class="hidden" title="lobby-join">
+        Join Lobby
+      </button>
+      <button id="button-lobby-create" class="hidden" title="lobby-create">
+        Create Lobby
+      </button>
+      <button id="button-lobby-exit" class="hidden" title="lobby-exit">
+        Exit Lobby
+      </button>
+      <input id="input-displayName" title="displayName"></input>
+      <button id="button-connect" title="connect">
+        Connect
+      </button>
+      <button id="button-disconnect" class="hidden" title="disconnect">
+        Disconnect
+      </button>
 
     </div>
 

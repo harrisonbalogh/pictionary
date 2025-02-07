@@ -32,7 +32,7 @@ let lastNetworkedStrokePosition = {
   x: undefined,
   y: undefined
 }
-let iAmOwner = false;
+let iAmPainter = false;
 
 /**
  * Reads the size of the HTML element to inform the size of the canvas context.
@@ -83,7 +83,7 @@ function mouseCanvasPosition(e) {
 }
 
 function handleMouseMove(e) {
-  if (!iAmOwner) return;
+  if (!iAmPainter) return;
 
   e.preventDefault();
   const { brushX, brushY } = mouseCanvasPosition(e);
@@ -142,7 +142,7 @@ function initUi() {
   canvasOverlayElement.addEventListener('mouseleave', clearBrushIndicator);
 
   canvasOverlayElement.addEventListener('mousedown', e => {
-    if (!iAmOwner) return;
+    if (!iAmPainter) return;
 
     e.preventDefault();
     const { brushX, brushY } = mouseCanvasPosition(e);
@@ -185,6 +185,23 @@ function initUi() {
     PainterServiceClient.message.stroke_clear()
   }
 
+  Ui.buttonConnect.onclick = _ => {
+    connect(Ui.inputDisplayName.value);
+  }
+  Ui.buttonDisconnect.onclick = _ => {
+    PainterServiceClient.disconnect()
+  }
+
+  Ui.buttonLobbyCreate.onclick = _ => {
+    PainterServiceClient.message.lobby_create();
+  }
+  Ui.buttonLobbyJoin.onclick = _ => {
+    PainterServiceClient.message.lobby_join(Ui.inputLobbyJoin.value);
+  }
+  Ui.buttonLobbyExit.onclick = _ => {
+    PainterServiceClient.message.lobby_exit();
+  }
+
   Array.from(Ui.colorPalette.children).forEach(child => {
     child.addEventListener('click', e => {
       Array.from(Ui.colorPalette.children).forEach(other => other.classList.remove('selected'));
@@ -203,35 +220,75 @@ function initUi() {
 }
 
 /** Connect to painter service. */
-function connect() {
-  PainterServiceClient.connect(Config.url.painter, (guid) => {
+function connect(name) {
+  PainterServiceClient.connect(Config.url.painter, name, (displayName) => {
 
-    Ui.labelLobbyUserId.innerHTML = guid;
-    Ui.labelLobbyUserId.classList.toggle('disabled', false);
-    Ui.content.classList.toggle('disabled', false);
-    syncCanvasSize();
+    Ui.labelUserId.innerHTML = displayName;
 
-    PainterServiceClient.setNotifyLobbyJoined((users, owner) => {
-      Ui.labelLobbyUsers.innerHTML = users.filter(u => u !== guid);
+    // Connect elements
+    Ui.inputDisplayName.classList.toggle('hidden', true);
+    Ui.buttonConnect.classList.toggle('hidden', true);
+    Ui.buttonDisconnect.classList.toggle('hidden', false);
+    // Lobby elements
+    Ui.inputLobbyJoin.classList.toggle('hidden', false);
+    Ui.buttonLobbyJoin.classList.toggle('hidden', false);
+    Ui.buttonLobbyCreate.classList.toggle('hidden', false);
+
+    PainterServiceClient.setNotifyLobbyJoined((id, users, owner, painter) => {
+      Ui.labelLobbyId.innerHTML = id;
+      Ui.labelLobbyPainter.innerHTML = painter;
+      Ui.labelLobbyUsers.innerHTML = users.filter(u => u !== displayName);
       Ui.labelLobbyOwner.innerHTML = owner;
-      iAmOwner = guid === owner;
-      // Owner change (TEMP policy, the owner is the painter)
-      if (iAmOwner) {
-        Ui.footerControls.classList.toggle('disabled', false);
+      iAmPainter = (displayName === painter);
+      if (iAmPainter) {
         Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
       } else {
-        Ui.footerControls.classList.toggle('disabled', true);
         releaseBrush();
       }
-    });
-    PainterServiceClient.setNotifyClose(_ => {
-      Ui.footerControls.classList.toggle('disabled', true);
-      Ui.content.classList.toggle('disabled', true);
+      // Paint elements
+      Ui.footerControls.classList.toggle('hidden', displayName !== painter);
+      Ui.content.classList.toggle('hidden', false);
       syncCanvasSize();
-
-      Ui.labelLobbyUserId.innerHTML = '-'
+      // Lobby elements
+      Ui.inputLobbyJoin.classList.toggle('hidden', true);
+      Ui.buttonLobbyJoin.classList.toggle('hidden', true);
+      Ui.buttonLobbyCreate.classList.toggle('hidden', true);
+      Ui.buttonLobbyExit.classList.toggle('hidden', false);
+    });
+    PainterServiceClient.setNotifyLobbyExited(_ => {
+      Ui.labelLobbyId.innerHTML = '-'
       Ui.labelLobbyUsers.innerHTML = '-'
       Ui.labelLobbyOwner.innerHTML = '-'
+      Ui.labelLobbyPainter.innerHTML = '-'
+      iAmPainter = undefined;
+      // Paint elements
+      Ui.footerControls.classList.toggle('hidden', true);
+      Ui.content.classList.toggle('hidden', true);
+      // Lobby elements
+      Ui.buttonLobbyJoin.classList.toggle('hidden', false);
+      Ui.inputLobbyJoin.classList.toggle('hidden', false);
+      Ui.buttonLobbyCreate.classList.toggle('hidden', false);
+      Ui.buttonLobbyExit.classList.toggle('hidden', true);
+    });
+    PainterServiceClient.setNotifyClose(_ => {
+      Ui.labelUserId.innerHTML = '-'
+      Ui.labelLobbyId.innerHTML = '-'
+      Ui.labelLobbyUsers.innerHTML = '-'
+      Ui.labelLobbyOwner.innerHTML = '-'
+      Ui.labelLobbyPainter.innerHTML = '-'
+      iAmPainter = undefined;
+      // Paint elements
+      Ui.footerControls.classList.toggle('hidden', true);
+      Ui.content.classList.toggle('hidden', true);
+      // Lobby elements
+      Ui.inputLobbyJoin.classList.toggle('hidden', true);
+      Ui.buttonLobbyJoin.classList.toggle('hidden', true);
+      Ui.buttonLobbyCreate.classList.toggle('hidden', true);
+      Ui.buttonLobbyExit.classList.toggle('hidden', true);
+      // Connect elements
+      Ui.inputDisplayName.classList.toggle('hidden', false);
+      Ui.buttonConnect.classList.toggle('hidden', false);
+      Ui.buttonDisconnect.classList.toggle('hidden', true);
     });
     PainterServiceClient.setNotifyStroke((brushX, brushY) => {
       // Start point
@@ -279,6 +336,5 @@ function connect() {
 (function _() {
   syncCanvasSize();
   initUi();
-  connect();
 })()
 // ===================

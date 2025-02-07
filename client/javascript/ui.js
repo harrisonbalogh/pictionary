@@ -93,11 +93,21 @@ export const sliderLabelLineWidth = document.getElementById('slider-label-line-w
 
 export const buttonClear = document.getElementById('button-clear')
 
+export const buttonLobbyCreate = document.getElementById('button-lobby-create')
+export const inputLobbyJoin = document.getElementById('input-lobby-join')
+export const buttonLobbyJoin = document.getElementById('button-lobby-join')
+export const buttonLobbyExit = document.getElementById('button-lobby-exit')
+export const buttonConnect = document.getElementById('button-connect')
+export const inputDisplayName = document.getElementById('input-displayName')
+export const buttonDisconnect = document.getElementById('button-disconnect')
+
 export const colorPalette = document.getElementById('color-palette');
 
-export const labelLobbyUserId = document.getElementById('label-lobby-user-id');
-export const labelLobbyUsers = document.getElementById('label-lobby-users');
+export const labelUserId = document.getElementById('label-user-id');
+export const labelLobbyId = document.getElementById('label-lobby-id');
 export const labelLobbyOwner = document.getElementById('label-lobby-owner');
+export const labelLobbyUsers = document.getElementById('label-lobby-users');
+export const labelLobbyPainter = document.getElementById('label-lobby-painter');
 export const footerControls = document.getElementById('footer-controls');
 
 export function syncCanvasSize() {
