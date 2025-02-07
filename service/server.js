@@ -1,7 +1,7 @@
 import ws from 'ws';
 import * as Router from './api/router.js';
 import * as Controller from './api/controller.js';
-import { SERVER_MESSAGE_OUT } from '@harxer/painter-lib';
+import { SERVER_MESSAGE_OUT, ERROR_MESSAGES, WS_SOCKET_CLOSE_CODE_NORMAL } from '@harxer/painter-lib';
 import UserModel from './models/user.js';
 
 const _users = [/** UserModel */];
@@ -11,6 +11,9 @@ const MESSAGE_OUT_TYPES = Object.values(SERVER_MESSAGE_OUT);
 
 const WebSocketServer = ws.Server
 const WEBSOCKET_PORT = process.env.PORT || 8082;
+
+/** Amount of time user has to send displayName @type {int} in milliseconds */
+const INIT_RESPONSE_TIMER = 3000;
 
 /**
  * Send data packet to given socket.
@@ -43,12 +46,23 @@ socketServer.on('connection', (socket, req) => {
   let user = new UserModel(socket);
   _users.push(user);
   // Policy: ID isn't shared until displayName is sent
-  console.log(`${new Date()} - Connected client (${_users.length}) with ID(${user.id}) from IP(${req.headers['x-real-ip']}).`)
+  console.log(`${new Date()} - Connected client (${_users.length}) with ID(${user.id})`)
+
+  // Policy: Must set displayName. Timer for checking displayName
+  let initTimer = setTimeout(_ => {
+    if (user.displayName !== undefined) return;
+    socket.close(WS_SOCKET_CLOSE_CODE_NORMAL, ERROR_MESSAGES.DisplayName.NotSet);
+  }, INIT_RESPONSE_TIMER)
 
   socket.on('message', msg => Router.socketMessage(user, msg))
   socket.on('close', _ => {
     if (user.lobby !== undefined) Controller.exitLobby(user);
     _users.splice(_users.indexOf(user), 1);
+
+    // Cleanup timer
+    clearTimeout(initTimer);
+
+    console.log(`${new Date()} - Disconnect client (${_users.length}) with ID(${user.id})`)
   });
 })
 

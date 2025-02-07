@@ -1,5 +1,5 @@
 import * as Controller from './controller.js'
-import { SERVER_MESSAGE_IN } from '@harxer/painter-lib';
+import { SERVER_MESSAGE_IN, ERROR_MESSAGES } from '@harxer/painter-lib';
 
 
 /** Handled inbound socket messages. */
@@ -19,11 +19,11 @@ export function socketMessage(user, msg) {
 
   // Policy: User has to submit displayName before proceeding
   if (user.displayName === undefined && msg.type !== SERVER_MESSAGE_IN.DisplayName) {
-    return Controller.fail(user, 'Display name not sent');
+    return Controller.fail(user, ERROR_MESSAGES.DisplayName.NotSet);
   }
 
   if (!messageHandler[msg.type]) {
-    return Controller.fail(user, `Unexpected message type ${msg.type}`)
+    return Controller.fail(user, ERROR_MESSAGES.UnknownType)
   }
   messageHandler[msg.type](user, msg.data);
 }

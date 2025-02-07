@@ -1,5 +1,5 @@
 
-import { SERVER_MESSAGE_OUT } from '@harxer/painter-lib';
+import { SERVER_MESSAGE_OUT, ERROR_MESSAGES, WS_SOCKET_CLOSE_CODE_NORMAL } from '@harxer/painter-lib';
 import { send, nameAvailable} from '../server.js';
 import Lobby from '../models/lobby.js';
 import User from '../models/user.js';
@@ -13,20 +13,28 @@ const findLobby = id => _lobbies.find(lobby => lobby.id === id);
  * @param {User} user Message target.
  * @param {*} error - OPTIONAL Error message sent with message.
  */
-export function fail(user, error = 'Unspecified failure') {
+export function fail(user, error = ERROR_MESSAGES.Unspecified) {
   send(user, SERVER_MESSAGE_OUT.Fail, { error });
 }
 
 /** Send stroke to all non-painters. @param {User} source Socket ID source. */
 export function displayName(source, { displayName }) {
-  if (source.displayName !== undefined) return fail(source, "Display name already set");
+  if (source.displayName !== undefined) return fail(source, ERROR_MESSAGES.DisplayName.Unmodifiable);
+  if (typeof displayName !== 'string') {
+    // Policy: protocol failed to send valid name
+    return source.socket.close(WS_SOCKET_CLOSE_CODE_NORMAL, ERROR_MESSAGES.DisplayName.Invalid);
+  }
 
-  if (typeof displayName !== 'string') return fail(source, "Invalid display name");
-
-  // Policy: no white space, only alpha-numeric
-  displayName = displayName.trim().replace(/[^a-zA-Z0-9 ]/g, "").replace(/<[^>]*>/g, "");
-  if (displayName.length === 0) return fail(source, "Invalid display name");
-  if (!nameAvailable(displayName)) return fail(source, "Unavailable display name");
+  // Policy: trimmed white space, only alpha-numeric
+  displayName = displayName.trim().replace(/[^a-zA-Z0-9]/g, "").replace(/<[^>]*>/g, "");
+  if (displayName.length === 0 || displayName.length > 24) {
+    // Policy: protocol failed to send valid name
+    return source.socket.close(WS_SOCKET_CLOSE_CODE_NORMAL, ERROR_MESSAGES.DisplayName.Invalid);
+  }
+  if (!nameAvailable(displayName)) {
+    // Policy: protocol failed to send valid name
+    return source.socket.close(WS_SOCKET_CLOSE_CODE_NORMAL, ERROR_MESSAGES.DisplayName.Unavailable);
+  }
 
   source.displayName = displayName;
   send(source, SERVER_MESSAGE_OUT.Connected, { displayName });
@@ -35,8 +43,8 @@ export function displayName(source, { displayName }) {
 /** Send stroke to all non-painters. @param {User} source Socket ID source. */
 export function stroke(source, { x, y }) {
   let lobby = source.lobby;
-  if (lobby === undefined) return fail(source, "Not in lobby");
-  if (source !== lobby.painter) return fail(source, "Not painter");
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
+  if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
   lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.Stroke, { x, y }));
 }
@@ -44,9 +52,9 @@ export function stroke(source, { x, y }) {
 /** Send stroke end to all non-painters. @param {User} source Socket ID source. */
 export function strokeEnd(source) {
   let lobby = source.lobby;
-  if (lobby === undefined) return fail(source, "Not in lobby");
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
   // TEMP: lobby policy. Owner is considered painter
-  if (source !== lobby.painter) return fail(source, "Not painter");
+  if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
   lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeEnd));
 }
@@ -54,9 +62,9 @@ export function strokeEnd(source) {
 /** Send stroke clear to all non-painters. @param {User} source Socket ID source. */
 export function strokeClear(source) {
   let lobby = source.lobby;
-  if (lobby === undefined) return fail(source, "Not in lobby");
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
   // TEMP: lobby policy. Owner is considered painter
-  if (source !== lobby.painter) return fail(source, "Not painter");
+  if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
   lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeClear));
 }
@@ -64,9 +72,9 @@ export function strokeClear(source) {
 /** Store then send stroke settings to all non-painters. @param {User} source Socket ID source. */
 export function strokeSettings(source, { size, color }) {
   let lobby = source.lobby;
-  if (lobby === undefined) return fail(source, "Not in lobby");
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
   // TEMP: lobby policy. Owner is considered painter
-  if (source !== lobby.painter) return fail(source, "Not painter");
+  if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
   lobby.strokeSettings.size = size;
   lobby.strokeSettings.color = color;
@@ -74,9 +82,9 @@ export function strokeSettings(source, { size, color }) {
 }
 
 export function joinLobby(source, { id: lobbyId }) {
-  if (source.lobby !== undefined) return fail(source, "Already in lobby");
+  if (source.lobby !== undefined) return fail(source, ERROR_MESSAGES.Lobby.AlreadyIn);
   let lobby = findLobby(lobbyId);
-  if (lobby === undefined) return fail(source, 'Unknown lobby');
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotFound);
 
   // TODO improve coupling
   lobby.addUser(source);
@@ -90,7 +98,7 @@ export function joinLobby(source, { id: lobbyId }) {
 
 export function exitLobby(source) {
   let lobby = source.lobby;
-  if (lobby === undefined) return fail(source, "Not in lobby");
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
 
   // TODO improve coupling
   lobby.removeUser(source);
@@ -98,7 +106,8 @@ export function exitLobby(source) {
 
   // Policy: Remove empty lobbies
   if (lobby.users.length === 0) {
-    _lobbies.splice(_lobbies.indexOf(lobby), 1)
+    _lobbies.splice(_lobbies.indexOf(lobby), 1);
+    console.log(`Closed lobby (${_lobbies.length}) with ID(${lobby.id}).`);
   }
 
   // Notify all lobby members
@@ -110,7 +119,7 @@ export function exitLobby(source) {
 }
 
 export function createLobby(source) {
-  if (source.lobby !== undefined) return fail(source, "Already in lobby");
+  if (source.lobby !== undefined) return fail(source, ERROR_MESSAGES.Lobby.AlreadyIn);
 
   // Policy: anyone can create a lobby, no limits
   let lobby = new Lobby();
