@@ -1,4 +1,6 @@
 import * as Ui from './ui.js'
+import * as PainterServiceClient from '/node_modules/@harxer/painter-lib/PainterServiceClient.js'
+import Config from './config.js'
 
 let canvasOverlayElement = Ui.canvasFg();
 let canvasElement = Ui.canvasBg();
@@ -25,6 +27,12 @@ let drawStyle = {
     Ui.sliderLineWidth.elementFill.style.backgroundColor = this.color
   }
 }
+
+let lastNetworkedStrokePosition = {
+  x: undefined,
+  y: undefined
+}
+let iAmOwner = false;
 
 /**
  * Reads the size of the HTML element to inform the size of the canvas context.
@@ -66,32 +74,78 @@ function drawBrushIndicator(brushX, brushY) {
   canvasOverlayContext.stroke();
 }
 
+/** Get the mouse position on the canvas. @returns {{brushX: int, brushX: int}} */
+function mouseCanvasPosition(e) {
+  var rect = canvasOverlayElement.getBoundingClientRect()
+  let brushX = Math.floor(e.clientX - rect.left) / view.scale
+  let brushY = (e.clientY - rect.top) / view.scale
+  return { brushX, brushY }
+}
+
+function handleMouseMove(e) {
+  if (!iAmOwner) return;
+
+  e.preventDefault();
+  const { brushX, brushY } = mouseCanvasPosition(e);
+
+  drawBrushIndicator(brushX, brushY);
+}
+
+const handleBrushMove = e => {
+  e.preventDefault();
+  const { brushX, brushY } = mouseCanvasPosition(e);
+
+  drawBrushIndicator(brushX, brushY);
+
+  // Networked strokes
+  PainterServiceClient.message.stroke(brushX, brushY);
+
+  canvasContext.lineTo(brushX, brushY);
+  canvasContext.stroke();
+
+  // Reset first point
+  canvasContext.beginPath();
+  canvasContext.moveTo(brushX, brushY);
+}
+
+const releaseBrush = e => {
+  // Brush mouse-down released, cleanup post-mousedown listeners
+  document.removeEventListener('mousemove', handleBrushMove);
+  document.removeEventListener('mouseleave', releaseBrush);
+  document.removeEventListener('mouseup', releaseBrush);
+  canvasOverlayElement.addEventListener('mousemove', handleMouseMove);
+  canvasOverlayElement.addEventListener('mouseleave', clearBrushIndicator);
+
+  if (e === undefined) {
+    // releaseBrush forceably called. Not event triggered
+    clearBrushIndicator();
+    return;
+  }
+
+  const { brushX, brushY } = mouseCanvasPosition(e);
+  if (brushY < 0 || brushY > view.height || brushX < 0 || brushX > view.width) {
+    // Released mouse offscreen, clear indicator
+    clearBrushIndicator();
+  }
+
+  // Networked
+  PainterServiceClient.message.stroke_end()
+};
+
 function initUi() {
   // Set background
   canvasContext.fillStyle = 'white';
   canvasContext.fillRect(0, 0, view.width, view.height)
 
-  function canvasMouse(e) {
-    var rect = canvasOverlayElement.getBoundingClientRect()
-    let brushX = Math.floor(e.clientX - rect.left) / view.scale
-    let brushY = (e.clientY - rect.top) / view.scale
-    return { brushX, brushY }
-  }
-
-  function hoverBrush(e) {
-    e.preventDefault();
-    const { brushX, brushY } = canvasMouse(e);
-
-    drawBrushIndicator(brushX, brushY);
-  }
-
   // Brush size indicator while mouse is up
-  canvasOverlayElement.addEventListener('mousemove', hoverBrush);
+  canvasOverlayElement.addEventListener('mousemove', handleMouseMove);
   canvasOverlayElement.addEventListener('mouseleave', clearBrushIndicator);
 
   canvasOverlayElement.addEventListener('mousedown', e => {
+    if (!iAmOwner) return;
+
     e.preventDefault();
-    const { brushX, brushY } = canvasMouse(e);
+    const { brushX, brushY } = mouseCanvasPosition(e);
     // Initial paint from brush down
     canvasContext.beginPath();
     canvasContext.arc(brushX, brushY, drawStyle.lineWidth / 2, 0, 2 * Math.PI);
@@ -100,40 +154,11 @@ function initUi() {
     canvasContext.beginPath();
     canvasContext.moveTo(brushX, brushY);
 
-    const moveBrush = e => {
-      e.preventDefault();
-      const { brushX, brushY } = canvasMouse(e);
-
-      drawBrushIndicator(brushX, brushY);
-
-      canvasContext.lineTo(brushX, brushY);
-      canvasContext.stroke();
-
-      // Reset first point
-      canvasContext.beginPath();
-      canvasContext.moveTo(brushX, brushY);
-    }
-
-    const releaseBrush = e => {
-      // Brush mouse-down released, cleanup post-mousedown listeners
-      document.removeEventListener('mousemove', moveBrush);
-      document.removeEventListener('mouseleave', releaseBrush);
-      document.removeEventListener('mouseup', releaseBrush);
-      canvasOverlayElement.addEventListener('mousemove', hoverBrush);
-      canvasOverlayElement.addEventListener('mouseleave', clearBrushIndicator);
-
-      const { brushX, brushY } = canvasMouse(e);
-      if (brushY < 0 || brushY > view.height || brushX < 0 || brushX > view.width) {
-        // Released mouse offscreen, clear indicator
-        clearBrushIndicator();
-      }
-    };
-
     // Brush mouse-down held, add listeners. These all need to be removed on release
-    document.addEventListener('mousemove', moveBrush);
+    document.addEventListener('mousemove', handleBrushMove);
     document.addEventListener('mouseleave', releaseBrush);
     document.addEventListener('mouseup', releaseBrush);
-    canvasOverlayElement.removeEventListener('mousemove', hoverBrush);
+    canvasOverlayElement.removeEventListener('mousemove', handleMouseMove);
     canvasOverlayElement.removeEventListener('mouseleave', clearBrushIndicator);
   })
 
@@ -144,6 +169,10 @@ function initUi() {
     canvasContext.lineWidth = floorVal;
     drawBrushIndicator(view.width / 2, view.height / 2)
   }
+  Ui.sliderLineWidth.notifyChangeEnd = val => {
+    // Networked
+    PainterServiceClient.message.stroke_settings(drawStyle.color, Math.floor(parseInt(val)))
+  }
   Ui.sliderLabelLineWidth.innerHTML = `Line Width: ${Math.floor(parseInt(drawStyle.lineWidth))}`;
   Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
 
@@ -151,6 +180,9 @@ function initUi() {
     canvasContext.fillStyle = 'white';
     canvasContext.fillRect(0, 0, view.width, view.height)
     canvasContext.fillStyle = drawStyle.color;
+
+    // Networked
+    PainterServiceClient.message.stroke_clear()
   }
 
   Array.from(Ui.colorPalette.children).forEach(child => {
@@ -158,6 +190,9 @@ function initUi() {
       Array.from(Ui.colorPalette.children).forEach(other => other.classList.remove('selected'));
       e.target.classList.toggle('selected');
       drawStyle.setColor(e.target.style.backgroundColor)
+
+      // Networked
+      PainterServiceClient.message.stroke_settings(e.target.style.backgroundColor, drawStyle.lineWidth)
     })
   })
 
@@ -167,7 +202,83 @@ function initUi() {
   canvasContext.strokeStyle = drawStyle.color;
 }
 
-(function init() {
-  syncCanvasSize()
-  initUi()
+/** Connect to painter service. */
+function connect() {
+  PainterServiceClient.connect(Config.url.painter, (guid) => {
+
+    Ui.labelLobbyUserId.innerHTML = guid;
+    Ui.labelLobbyUserId.classList.toggle('disabled', false);
+    Ui.content.classList.toggle('disabled', false);
+    syncCanvasSize();
+
+    PainterServiceClient.setNotifyLobbyJoined((users, owner) => {
+      Ui.labelLobbyUsers.innerHTML = users.filter(u => u !== guid);
+      Ui.labelLobbyOwner.innerHTML = owner;
+      iAmOwner = guid === owner;
+      // Owner change (TEMP policy, the owner is the painter)
+      if (iAmOwner) {
+        Ui.footerControls.classList.toggle('disabled', false);
+        Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
+      } else {
+        Ui.footerControls.classList.toggle('disabled', true);
+        releaseBrush();
+      }
+    });
+    PainterServiceClient.setNotifyClose(_ => {
+      Ui.footerControls.classList.toggle('disabled', true);
+      Ui.content.classList.toggle('disabled', true);
+      syncCanvasSize();
+
+      Ui.labelLobbyUserId.innerHTML = '-'
+      Ui.labelLobbyUsers.innerHTML = '-'
+      Ui.labelLobbyOwner.innerHTML = '-'
+    });
+    PainterServiceClient.setNotifyStroke((brushX, brushY) => {
+      // Start point
+      if (lastNetworkedStrokePosition.x === undefined) {
+        lastNetworkedStrokePosition.x = brushX;
+        lastNetworkedStrokePosition.y = brushY;
+        canvasContext.beginPath();
+        canvasContext.moveTo(brushX, brushY);
+      } else {
+        // Stroke to moved position
+        canvasContext.lineTo(brushX, brushY);
+        canvasContext.stroke();
+        // Reset start point
+        canvasContext.beginPath();
+        canvasContext.moveTo(brushX, brushY);
+      }
+    });
+    PainterServiceClient.setNotifyStrokeEnd(_ => {
+      // Reset stroke position
+      lastNetworkedStrokePosition.x = undefined;
+      lastNetworkedStrokePosition.y = undefined;
+    });
+    PainterServiceClient.setNotifyStrokeClear(_ => {
+      canvasContext.fillStyle = 'white';
+      canvasContext.fillRect(0, 0, view.width, view.height)
+      canvasContext.fillStyle = drawStyle.color;
+    });
+    PainterServiceClient.setNotifyStrokeSettings((color, size) => {
+      // Color
+      Array.from(Ui.colorPalette.children).forEach(elem =>
+        elem.classList.toggle('selected', elem.style.backgroundColor === color)
+      );
+      drawStyle.setColor(color)
+
+      // Size
+      Ui.sliderLineWidth.setValue(size);
+      Ui.sliderLabelLineWidth.innerHTML = `Line Width: ${size}`;
+      drawStyle.lineWidth = size;
+      canvasContext.lineWidth = size;
+    });
+  })
+}
+
+// Initialize app ====
+(function _() {
+  syncCanvasSize();
+  initUi();
+  connect();
 })()
+// ===================

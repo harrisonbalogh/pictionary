@@ -13,7 +13,8 @@ document.addEventListener('mousemove', e => {
 })
 const handleStopActiveSliderTrack = (e) => {
   if (currentSliderActive == null || e.type == "mousedown") return
-  currentSliderActive.handleMouseLeave()
+  currentSliderActive.notifyChangeEnd(currentSliderActive.value);
+  // currentSliderActive.handleMouseLeave()
   currentSliderActive = null
 }
 document.addEventListener('mouseleave', handleStopActiveSliderTrack)
@@ -25,6 +26,7 @@ class Slider {
     this.elementNotch = element.children[1]
     this.value = 0
     this.notifyValueChange = () => {}
+    this.notifyChangeEnd = () => {}
     this.MIN_VALUE = MIN_VALUE
     this.MAX_VALUE = MAX_VALUE
 
@@ -48,15 +50,15 @@ class Slider {
     return false
   }
   handleMouseDown(e) {
-    if (currentSliderActive != null) currentSliderActive.handleMouseLeave()
+    // if (currentSliderActive != null) currentSliderActive.handleMouseLeave()
     currentSliderActive = this
     this.handleMouseMove(e);
     e.preventDefault();
     return false
   }
-  handleMouseLeave() {
-    this.isHeld = false
-  }
+  // handleMouseLeave() {
+  //   this.isHeld = false
+  // }
   setValue(val) {
     val = Math.min(Math.max(this.MIN_VALUE, val), this.MAX_VALUE) // clamp
     val = (val - this.MIN_VALUE) / (this.MAX_VALUE - this.MIN_VALUE) // normalize
@@ -92,6 +94,11 @@ export const sliderLabelLineWidth = document.getElementById('slider-label-line-w
 export const buttonClear = document.getElementById('button-clear')
 
 export const colorPalette = document.getElementById('color-palette');
+
+export const labelLobbyUserId = document.getElementById('label-lobby-user-id');
+export const labelLobbyUsers = document.getElementById('label-lobby-users');
+export const labelLobbyOwner = document.getElementById('label-lobby-owner');
+export const footerControls = document.getElementById('footer-controls');
 
 export function syncCanvasSize() {
   _canvasFg.width = _canvasFg.offsetWidth * 2

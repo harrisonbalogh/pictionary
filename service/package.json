@@ -1,0 +1,15 @@
+{
+  "name": "painter-service",
+  "version": "1.0.0",
+  "description": "Painter lobby service.",
+  "main": "server.js",
+  "type": "module",
+  "author": "Harrison Balogh",
+  "license": "ISC",
+  "dependencies": {
+    "ws": "^6.2.2"
+  },
+  "devDependencies": {
+    "@harxer/painter-lib": "file:../lib"
+  }
+}

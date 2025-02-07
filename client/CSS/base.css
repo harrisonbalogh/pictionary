@@ -64,6 +64,9 @@ p {
   position: relative;
   text-align: center;
 }
+.canvas-container.disabled {
+  display: none;
+}
 
 canvas {
   height: 100%;
@@ -81,6 +84,9 @@ canvas {
 .footer-control-container {
   flex-basis: 0 0;
   margin-top: 20px;
+}
+.footer-control-container.disabled {
+  display: none;
 }
 
 .horizontal-controls {
