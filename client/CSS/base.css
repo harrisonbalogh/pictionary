@@ -241,3 +241,7 @@ select {
 .hidden {
   display: none;
 }
+
+#label-game-timer {
+  float: right;
+}

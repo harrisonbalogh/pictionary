@@ -1,5 +1,5 @@
-let _canvasFg = document.getElementById('fgCanvas')
 let _canvasBg = document.getElementById('bgCanvas')
+let _canvasFg = document.getElementById('fgCanvas')
 export const canvasFg = () => _canvasFg
 export const canvasBg = () => _canvasBg
 
@@ -101,6 +101,10 @@ export const buttonConnect = document.getElementById('button-connect')
 export const inputDisplayName = document.getElementById('input-displayName')
 export const buttonDisconnect = document.getElementById('button-disconnect')
 
+export const inputGameWord = document.getElementById('input-game-word');
+export const buttonGameSend = document.getElementById('button-game-send');
+export const buttonGameStart = document.getElementById('button-game-start');
+
 export const colorPalette = document.getElementById('color-palette');
 
 export const labelUserId = document.getElementById('label-user-id');
@@ -108,6 +112,8 @@ export const labelLobbyId = document.getElementById('label-lobby-id');
 export const labelLobbyOwner = document.getElementById('label-lobby-owner');
 export const labelLobbyUsers = document.getElementById('label-lobby-users');
 export const labelLobbyPainter = document.getElementById('label-lobby-painter');
+export const labelGameMessage = document.getElementById('label-game-message');
+export const labelGameTimer = document.getElementById('label-game-timer');
 export const footerControls = document.getElementById('footer-controls');
 
 export function syncCanvasSize() {

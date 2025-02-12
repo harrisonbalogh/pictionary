@@ -18,17 +18,17 @@
         <p style="display: inline-block">User:</p>
         <p id="label-user-id" class='disabled' style="display: inline-block">-</p>
         <div></div>
-        <p style="display: inline-block">Lobby ID:</p>
-        <p id="label-lobby-id" style="display: inline-block">-</p>
+        <p id="label-lobby-id" class="hidden">-</p>
         <div></div>
-        <p style="display: inline-block">Owner:</p>
-        <p id="label-lobby-owner" style="display: inline-block">-</p>
+        <p id="label-lobby-owner" class="hidden">-</p>
         <div></div>
-        <p style="display: inline-block">Lobby Users:</p>
-        <p id="label-lobby-users" style="display: inline-block">-</p>
+        <p id="label-lobby-users" class="hidden">-</p>
         <div></div>
-        <p style="display: inline-block">Painter:</p>
-        <p id="label-lobby-painter" style="display: inline-block">-</p>
+        <p id="label-lobby-painter" class="hidden"></p>
+        <div></div>
+        <p id="label-game-message" class="hidden"></p>
+        <div></div>
+        <p id="label-game-timer" class="hidden"></p>
       </div>
 
       <div id="content" class="canvas-container hidden">
@@ -64,6 +64,14 @@
           <button id="button-clear" title="clear"></button>
         </div>
       </div>
+
+      <input id="input-game-word" class="hidden" title="game-word"></input>
+      <button id="button-game-send" class="hidden" title="game-send">
+        Send
+      </button>
+      <button id="button-game-start" class="hidden" title="game-start">
+        Start Game
+      </button>
 
       <input id="input-lobby-join" class="hidden" title="lobby-join"></input>
       <button id="button-lobby-join" class="hidden" title="lobby-join">

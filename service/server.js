@@ -36,7 +36,7 @@ export function send(user, type, data) {
 
 /** Check if a display name is unused. @return {boolean}  */
 export function nameAvailable(name) {
-  return _users.every(user => user.displayName !== name);
+  return _users.every(user => user.displayName !== name.toLowerCase().trim());
 }
 
 let socketServer = new WebSocketServer({port: WEBSOCKET_PORT});

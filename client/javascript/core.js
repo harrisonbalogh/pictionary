@@ -32,7 +32,31 @@ let lastNetworkedStrokePosition = {
   x: undefined,
   y: undefined
 }
+// Network cache
 let iAmPainter = false;
+let iAmOwner = false;
+let countdown = 0;
+let countdownInterval = undefined;
+const setCountdown = function(timeRemaining) {
+  Ui.labelGameTimer.innerHTML = `${timeRemaining / 1000}s`;
+  Ui.labelGameTimer.classList.toggle('hidden', false);
+  clearInterval(countdownInterval);
+  countdown = timeRemaining / 1000;
+  countdownInterval = setInterval(_ => {
+    if (countdown <= 0) {
+      clearCountdown();
+      return;
+    }
+    countdown -= 1;
+    Ui.labelGameTimer.innerHTML = `<b>${countdown}</b>s`;
+  }, 1000);
+}
+const clearCountdown = _ => {
+  countdown = 0;
+  Ui.labelGameTimer.classList.toggle('hidden', true);
+  clearInterval(countdownInterval);
+}
+let gameStart = false;
 
 /**
  * Reads the size of the HTML element to inform the size of the canvas context.
@@ -191,6 +215,13 @@ function initUi() {
   Ui.buttonDisconnect.onclick = _ => {
     PainterServiceClient.disconnect()
   }
+  Ui.buttonGameStart.onclick = _ => {
+    PainterServiceClient.message.game_start()
+  }
+  Ui.buttonGameSend.onclick = _ => {
+    let word = Ui.inputGameWord.value;
+    PainterServiceClient.message.game_guess_word(word)
+  }
 
   Ui.buttonLobbyCreate.onclick = _ => {
     PainterServiceClient.message.lobby_create();
@@ -222,9 +253,7 @@ function initUi() {
 /** Connect to painter service. */
 function connect(name) {
   PainterServiceClient.connect(Config.url.painter, name, (displayName) => {
-
     Ui.labelUserId.innerHTML = displayName;
-
     // Connect elements
     Ui.inputDisplayName.classList.toggle('hidden', true);
     Ui.buttonConnect.classList.toggle('hidden', true);
@@ -234,32 +263,33 @@ function connect(name) {
     Ui.buttonLobbyJoin.classList.toggle('hidden', false);
     Ui.buttonLobbyCreate.classList.toggle('hidden', false);
 
-    PainterServiceClient.setNotifyLobbyJoined((id, users, owner, painter) => {
-      Ui.labelLobbyId.innerHTML = id;
-      Ui.labelLobbyPainter.innerHTML = painter;
-      Ui.labelLobbyUsers.innerHTML = users.filter(u => u !== displayName);
-      Ui.labelLobbyOwner.innerHTML = owner;
-      iAmPainter = (displayName === painter);
-      if (iAmPainter) {
-        Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
-      } else {
-        releaseBrush();
-      }
-      // Paint elements
-      Ui.footerControls.classList.toggle('hidden', displayName !== painter);
-      Ui.content.classList.toggle('hidden', false);
-      syncCanvasSize();
+    PainterServiceClient.setNotifyLobbyJoined((id, users, owner) => {
+      Ui.labelLobbyId.classList.toggle('hidden', false);
+      Ui.labelLobbyUsers.classList.toggle('hidden', false);
+      Ui.labelLobbyOwner.classList.toggle('hidden', false);
+      Ui.labelLobbyId.innerHTML = `Lobby: ${id}`;
+      Ui.labelLobbyUsers.innerHTML = `Users: ${users.filter(u => u !== displayName)}`;
+      Ui.labelLobbyOwner.innerHTML = `Owner: ${owner}`;
       // Lobby elements
       Ui.inputLobbyJoin.classList.toggle('hidden', true);
       Ui.buttonLobbyJoin.classList.toggle('hidden', true);
       Ui.buttonLobbyCreate.classList.toggle('hidden', true);
       Ui.buttonLobbyExit.classList.toggle('hidden', false);
+      // Game elements
+      let iAmOwner = displayName === owner;
+      Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner || gameStart);
     });
     PainterServiceClient.setNotifyLobbyExited(_ => {
-      Ui.labelLobbyId.innerHTML = '-'
-      Ui.labelLobbyUsers.innerHTML = '-'
-      Ui.labelLobbyOwner.innerHTML = '-'
-      Ui.labelLobbyPainter.innerHTML = '-'
+      gameStart = false; // Clear memo
+      iAmOwner = false;
+      clearInterval(countdownInterval);
+      Ui.labelLobbyId.classList.toggle('hidden', true);
+      Ui.labelLobbyUsers.classList.toggle('hidden', true);
+      Ui.labelLobbyOwner.classList.toggle('hidden', true);
+      Ui.labelLobbyId.innerHTML = ''
+      Ui.labelLobbyUsers.innerHTML = ''
+      Ui.labelLobbyOwner.innerHTML = ''
+      Ui.labelLobbyPainter.innerHTML = ''
       iAmPainter = undefined;
       // Paint elements
       Ui.footerControls.classList.toggle('hidden', true);
@@ -269,17 +299,36 @@ function connect(name) {
       Ui.inputLobbyJoin.classList.toggle('hidden', false);
       Ui.buttonLobbyCreate.classList.toggle('hidden', false);
       Ui.buttonLobbyExit.classList.toggle('hidden', true);
+      // Game elements
+      Ui.labelGameTimer.classList.toggle('hidden', true);
+      Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.labelLobbyPainter.classList.toggle('hidden', true);
+      Ui.labelGameMessage.classList.toggle('hidden', true);
+      Ui.inputGameWord.classList.toggle('hidden', true);
+      Ui.buttonGameSend.classList.toggle('hidden', true);
     });
     PainterServiceClient.setNotifyClose(_ => {
-      Ui.labelUserId.innerHTML = '-'
-      Ui.labelLobbyId.innerHTML = '-'
-      Ui.labelLobbyUsers.innerHTML = '-'
-      Ui.labelLobbyOwner.innerHTML = '-'
-      Ui.labelLobbyPainter.innerHTML = '-'
-      iAmPainter = undefined;
+      gameStart = false; // Clear memo
+      iAmOwner = false;
+      clearInterval(countdownInterval);
+      Ui.labelLobbyId.classList.toggle('hidden', true);
+      Ui.labelLobbyUsers.classList.toggle('hidden', true);
+      Ui.labelLobbyOwner.classList.toggle('hidden', true);
+      Ui.labelUserId.innerHTML = ''
+      Ui.labelLobbyId.innerHTML = ''
+      Ui.labelLobbyUsers.innerHTML = ''
+      Ui.labelLobbyOwner.innerHTML = ''
+      iAmPainter = false;
       // Paint elements
       Ui.footerControls.classList.toggle('hidden', true);
       Ui.content.classList.toggle('hidden', true);
+      // Game elements
+      Ui.labelGameTimer.classList.toggle('hidden', true);
+      Ui.labelLobbyPainter.classList.toggle('hidden', true);
+      Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.labelGameMessage.classList.toggle('hidden', true);
+      Ui.inputGameWord.classList.toggle('hidden', true);
+      Ui.buttonGameSend.classList.toggle('hidden', true);
       // Lobby elements
       Ui.inputLobbyJoin.classList.toggle('hidden', true);
       Ui.buttonLobbyJoin.classList.toggle('hidden', true);
@@ -289,6 +338,81 @@ function connect(name) {
       Ui.inputDisplayName.classList.toggle('hidden', false);
       Ui.buttonConnect.classList.toggle('hidden', false);
       Ui.buttonDisconnect.classList.toggle('hidden', true);
+    });
+    PainterServiceClient.setNotifyGameStart((rounds) => {
+      gameStart = true; // Memo
+      // Clear canvas
+      canvasContext.fillStyle = 'white';
+      canvasContext.fillRect(0, 0, view.width, view.height)
+      canvasContext.fillStyle = drawStyle.color;
+      // Game elements
+      Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.labelGameMessage.classList.toggle('hidden', false);
+      Ui.labelGameMessage.innerHTML = `Game Started... ${rounds} round${rounds === 1 ? '' : 's'}`
+      // Paint elements
+      Ui.content.classList.toggle('hidden', false);
+      syncCanvasSize();
+    });
+    PainterServiceClient.setNotifyGameEventSelecting((guessers, painter, timeRemaining, wordChoices) => {
+      Ui.labelLobbyPainter.classList.toggle('hidden', false);
+      Ui.labelLobbyPainter.innerHTML = `Painter: ${painter}`;
+      if (displayName === painter) {
+        Ui.inputGameWord.innerHTML = "";
+        Ui.inputGameWord.classList.toggle('hidden', false);
+        Ui.buttonGameSend.classList.toggle('hidden', false);
+        Ui.labelGameMessage.innerHTML = `Select a word: ${wordChoices.join(', ')}`;
+      } else {
+        Ui.labelGameMessage.innerHTML = `${painter} is selecting a word...`;
+      }
+      setCountdown(timeRemaining);
+    });
+    PainterServiceClient.setNotifyGameEventPainting((guessers, painter, timeRemaining, wordChoice) => {
+      iAmPainter = (displayName === painter);
+      Ui.footerControls.classList.toggle('hidden', !iAmPainter);
+      if (iAmPainter) {
+        Ui.labelGameMessage.innerHTML = `Paint word: ${wordChoice}`;
+        Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
+        Ui.inputGameWord.classList.toggle('hidden', true);
+        Ui.buttonGameSend.classList.toggle('hidden', true);
+      } else {
+        Ui.inputGameWord.innerHTML = "";
+        Ui.inputGameWord.classList.toggle('hidden', false);
+        Ui.buttonGameSend.classList.toggle('hidden', false);
+        Ui.labelGameMessage.innerHTML = `${painter} is painting...`;
+        releaseBrush();
+      }
+      setCountdown(timeRemaining);
+    });
+    PainterServiceClient.setNotifyGameEventCorrectGuess((userPoints, guesser) => {
+      if (guesser === displayName) {
+        let pts = userPoints[displayName];
+        Ui.labelGameMessage.innerHTML = `You guessed correctly! +${pts} points`;
+        Ui.inputGameWord.classList.toggle('hidden', true);
+        Ui.buttonGameSend.classList.toggle('hidden', true);
+      } else {
+        // console.log(`${guesser} guessed correctly!`, userPoints);
+      }
+    });
+    PainterServiceClient.setNotifyGameEventIntermission((timeRemaining) => {
+      iAmPainter = false;
+      Ui.footerControls.classList.toggle('hidden', true);
+      Ui.labelGameMessage.innerHTML = `Round over`;
+      Ui.inputGameWord.classList.toggle('hidden', true);
+      Ui.buttonGameSend.classList.toggle('hidden', true);
+      setCountdown(timeRemaining);
+    });
+    PainterServiceClient.setNotifyGameEventEnded(() => {
+      Ui.labelGameTimer.classList.toggle('hidden', true);
+      gameStart = false; // Clear memo
+      clearInterval(countdownInterval);
+      Ui.labelGameMessage.classList.toggle('hidden', true);
+      Ui.labelGameMessage.innerHTML = ""
+      Ui.labelLobbyPainter.classList.toggle('hidden', true);
+      Ui.labelLobbyPainter.innerHTML = ""
+      // Paint elements
+      Ui.content.classList.toggle('hidden', true);
+      // Game elements
+      Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner);
     });
     PainterServiceClient.setNotifyStroke((brushX, brushY) => {
       // Start point

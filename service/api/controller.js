@@ -1,6 +1,6 @@
 
 import { SERVER_MESSAGE_OUT, ERROR_MESSAGES, WS_SOCKET_CLOSE_CODE_NORMAL } from '@harxer/painter-lib';
-import { send, nameAvailable} from '../server.js';
+import { send, nameAvailable } from '../server.js';
 import Lobby from '../models/lobby.js';
 import User from '../models/user.js';
 
@@ -46,39 +46,36 @@ export function stroke(source, { x, y }) {
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
   if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
-  lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.Stroke, { x, y }));
+  lobby.guessers.forEach(user => send(user, SERVER_MESSAGE_OUT.Stroke, { x, y }));
 }
 
 /** Send stroke end to all non-painters. @param {User} source Socket ID source. */
 export function strokeEnd(source) {
   let lobby = source.lobby;
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
-  // TEMP: lobby policy. Owner is considered painter
   if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
-  lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeEnd));
+  lobby.guessers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeEnd));
 }
 
 /** Send stroke clear to all non-painters. @param {User} source Socket ID source. */
 export function strokeClear(source) {
   let lobby = source.lobby;
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
-  // TEMP: lobby policy. Owner is considered painter
   if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
-  lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeClear));
+  lobby.guessers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeClear));
 }
 
 /** Store then send stroke settings to all non-painters. @param {User} source Socket ID source. */
 export function strokeSettings(source, { size, color }) {
   let lobby = source.lobby;
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
-  // TEMP: lobby policy. Owner is considered painter
   if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
 
   lobby.strokeSettings.size = size;
   lobby.strokeSettings.color = color;
-  lobby.peers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeSettings, { size, color }));
+  lobby.guessers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeSettings, { size, color }));
 }
 
 export function joinLobby(source, { id: lobbyId }) {
@@ -133,4 +130,19 @@ export function createLobby(source) {
 
   // Notify source
   send(source, SERVER_MESSAGE_OUT.LobbyJoined, lobby.lobbyInfo())
+}
+
+export function startGame(source) {
+  let lobby = source.lobby;
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
+  if (source !== lobby.owner) return fail(source, ERROR_MESSAGES.Lobby.NotOwner);
+
+  lobby.startGame();
+}
+
+export function guessWord(source, { word }) {
+  let lobby = source.lobby;
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
+
+  lobby.guessWord(source, word);
 }
