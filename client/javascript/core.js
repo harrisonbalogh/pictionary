@@ -1,5 +1,6 @@
 import * as Ui from './ui.js'
-import * as PainterServiceClient from '/node_modules/@harxer/painter-lib/PainterServiceClient.js'
+import Server from '/node_modules/@harxer/painter-lib/PainterServiceClient.js'
+import { CLIENT_MESSAGE_IN as MSG_IN } from '/node_modules/@harxer/painter-lib/MsgTypes.js'
 import Config from './config.js'
 
 let canvasOverlayElement = Ui.canvasFg();
@@ -122,7 +123,7 @@ const handleBrushMove = e => {
   drawBrushIndicator(brushX, brushY);
 
   // Networked strokes
-  PainterServiceClient.message.stroke(brushX, brushY);
+  Server.send.stroke(brushX, brushY);
 
   canvasContext.lineTo(brushX, brushY);
   canvasContext.stroke();
@@ -153,7 +154,7 @@ const releaseBrush = e => {
   }
 
   // Networked
-  PainterServiceClient.message.stroke_end()
+  Server.send.strokeEnd()
 };
 
 function initUi() {
@@ -195,7 +196,7 @@ function initUi() {
   }
   Ui.sliderLineWidth.notifyChangeEnd = val => {
     // Networked
-    PainterServiceClient.message.stroke_settings(drawStyle.color, Math.floor(parseInt(val)))
+    Server.send.strokeSettings(drawStyle.color, Math.floor(parseInt(val)))
   }
   Ui.sliderLabelLineWidth.innerHTML = `Line Width: ${Math.floor(parseInt(drawStyle.lineWidth))}`;
   Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
@@ -206,31 +207,31 @@ function initUi() {
     canvasContext.fillStyle = drawStyle.color;
 
     // Networked
-    PainterServiceClient.message.stroke_clear()
+    Server.send.strokeClear()
   }
 
   Ui.buttonConnect.onclick = _ => {
     connect(Ui.inputDisplayName.value);
   }
   Ui.buttonDisconnect.onclick = _ => {
-    PainterServiceClient.disconnect()
+    Server.disconnect()
   }
   Ui.buttonGameStart.onclick = _ => {
-    PainterServiceClient.message.game_start()
+    Server.send.gameStart()
   }
   Ui.buttonGameSend.onclick = _ => {
     let word = Ui.inputGameWord.value;
-    PainterServiceClient.message.game_guess_word(word)
+    Server.send.gameGuessWord(word)
   }
 
   Ui.buttonLobbyCreate.onclick = _ => {
-    PainterServiceClient.message.lobby_create();
+    Server.send.lobbyCreate();
   }
   Ui.buttonLobbyJoin.onclick = _ => {
-    PainterServiceClient.message.lobby_join(Ui.inputLobbyJoin.value);
+    Server.send.lobbyJoin(Ui.inputLobbyJoin.value);
   }
   Ui.buttonLobbyExit.onclick = _ => {
-    PainterServiceClient.message.lobby_exit();
+    Server.send.lobbyExit();
   }
 
   Array.from(Ui.colorPalette.children).forEach(child => {
@@ -240,7 +241,7 @@ function initUi() {
       drawStyle.setColor(e.target.style.backgroundColor)
 
       // Networked
-      PainterServiceClient.message.stroke_settings(e.target.style.backgroundColor, drawStyle.lineWidth)
+      Server.send.strokeSettings(e.target.style.backgroundColor, drawStyle.lineWidth)
     })
   })
 
@@ -252,7 +253,7 @@ function initUi() {
 
 /** Connect to painter service. */
 function connect(name) {
-  PainterServiceClient.connect(Config.url.painter, name, (displayName) => {
+  const serverConnect = ({displayName}) => {
     Ui.labelUserId.innerHTML = displayName;
     // Connect elements
     Ui.inputDisplayName.classList.toggle('hidden', true);
@@ -263,7 +264,7 @@ function connect(name) {
     Ui.buttonLobbyJoin.classList.toggle('hidden', false);
     Ui.buttonLobbyCreate.classList.toggle('hidden', false);
 
-    PainterServiceClient.setNotifyLobbyJoined((id, users, owner) => {
+    server.addEventListener(MSG_IN.LobbyJoined, ({id, users, owner}) => {
       Ui.labelLobbyId.classList.toggle('hidden', false);
       Ui.labelLobbyUsers.classList.toggle('hidden', false);
       Ui.labelLobbyOwner.classList.toggle('hidden', false);
@@ -279,7 +280,7 @@ function connect(name) {
       let iAmOwner = displayName === owner;
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner || gameStart);
     });
-    PainterServiceClient.setNotifyLobbyExited(_ => {
+    server.addEventListener(MSG_IN.LobbyExited, () => {
       gameStart = false; // Clear memo
       iAmOwner = false;
       clearInterval(countdownInterval);
@@ -307,7 +308,9 @@ function connect(name) {
       Ui.inputGameWord.classList.toggle('hidden', true);
       Ui.buttonGameSend.classList.toggle('hidden', true);
     });
-    PainterServiceClient.setNotifyClose(_ => {
+    // server.addEventListener(MSG_IN.LobbyExited, () => {
+    server.addEventListener('close', () => {
+    // Server.setNotifyClose(_ => {
       gameStart = false; // Clear memo
       iAmOwner = false;
       clearInterval(countdownInterval);
@@ -339,7 +342,7 @@ function connect(name) {
       Ui.buttonConnect.classList.toggle('hidden', false);
       Ui.buttonDisconnect.classList.toggle('hidden', true);
     });
-    PainterServiceClient.setNotifyGameStart((rounds) => {
+    server.addEventListener(MSG_IN.GameStart, ({rounds}) => {
       gameStart = true; // Memo
       // Clear canvas
       canvasContext.fillStyle = 'white';
@@ -353,7 +356,12 @@ function connect(name) {
       Ui.content.classList.toggle('hidden', false);
       syncCanvasSize();
     });
-    PainterServiceClient.setNotifyGameEventSelecting((guessers, painter, timeRemaining, wordChoices) => {
+    server.addEventListener(MSG_IN.GameEventSelecting, ({guessers, painter, timeRemaining, wordChoices}) => {
+      // Clear paint
+      canvasContext.fillStyle = 'white';
+      canvasContext.fillRect(0, 0, view.width, view.height)
+      canvasContext.fillStyle = drawStyle.color;
+      // Game elements
       Ui.labelLobbyPainter.classList.toggle('hidden', false);
       Ui.labelLobbyPainter.innerHTML = `Painter: ${painter}`;
       if (displayName === painter) {
@@ -366,7 +374,7 @@ function connect(name) {
       }
       setCountdown(timeRemaining);
     });
-    PainterServiceClient.setNotifyGameEventPainting((guessers, painter, timeRemaining, wordChoice) => {
+    server.addEventListener(MSG_IN.GameEventPainting, ({guessers, painter, timeRemaining, wordChoice}) => {
       iAmPainter = (displayName === painter);
       Ui.footerControls.classList.toggle('hidden', !iAmPainter);
       if (iAmPainter) {
@@ -383,7 +391,7 @@ function connect(name) {
       }
       setCountdown(timeRemaining);
     });
-    PainterServiceClient.setNotifyGameEventCorrectGuess((userPoints, guesser) => {
+    server.addEventListener(MSG_IN.GameEventCorrectGuess, ({userPoints, guesser}) => {
       if (guesser === displayName) {
         let pts = userPoints[displayName];
         Ui.labelGameMessage.innerHTML = `You guessed correctly! +${pts} points`;
@@ -393,7 +401,7 @@ function connect(name) {
         // console.log(`${guesser} guessed correctly!`, userPoints);
       }
     });
-    PainterServiceClient.setNotifyGameEventIntermission((timeRemaining) => {
+    server.addEventListener(MSG_IN.GameEventIntermission, ({timeRemaining}) => {
       iAmPainter = false;
       Ui.footerControls.classList.toggle('hidden', true);
       Ui.labelGameMessage.innerHTML = `Round over`;
@@ -401,7 +409,7 @@ function connect(name) {
       Ui.buttonGameSend.classList.toggle('hidden', true);
       setCountdown(timeRemaining);
     });
-    PainterServiceClient.setNotifyGameEventEnded(() => {
+    server.addEventListener(MSG_IN.GameEventEnded, () => {
       Ui.labelGameTimer.classList.toggle('hidden', true);
       gameStart = false; // Clear memo
       clearInterval(countdownInterval);
@@ -414,7 +422,7 @@ function connect(name) {
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner);
     });
-    PainterServiceClient.setNotifyStroke((brushX, brushY) => {
+    server.addEventListener(MSG_IN.Stroke, ({brushX, brushY}) => {
       // Start point
       if (lastNetworkedStrokePosition.x === undefined) {
         lastNetworkedStrokePosition.x = brushX;
@@ -430,17 +438,17 @@ function connect(name) {
         canvasContext.moveTo(brushX, brushY);
       }
     });
-    PainterServiceClient.setNotifyStrokeEnd(_ => {
+    server.addEventListener(MSG_IN.StrokeEnd, () => {
       // Reset stroke position
       lastNetworkedStrokePosition.x = undefined;
       lastNetworkedStrokePosition.y = undefined;
     });
-    PainterServiceClient.setNotifyStrokeClear(_ => {
+    server.addEventListener(MSG_IN.StrokeClear, () => {
       canvasContext.fillStyle = 'white';
-      canvasContext.fillRect(0, 0, view.width, view.height)
+      canvasContext.fillRect(0, 0, view.width, view.height);
       canvasContext.fillStyle = drawStyle.color;
     });
-    PainterServiceClient.setNotifyStrokeSettings((color, size) => {
+    server.addEventListener(MSG_IN.StrokeSettings, ({color, size}) => {
       // Color
       Array.from(Ui.colorPalette.children).forEach(elem =>
         elem.classList.toggle('selected', elem.style.backgroundColor === color)
@@ -453,7 +461,8 @@ function connect(name) {
       drawStyle.lineWidth = size;
       canvasContext.lineWidth = size;
     });
-  })
+  }
+  let server = new Server(Config.url.painter, name, serverConnect)
 }
 
 // Initialize app ====

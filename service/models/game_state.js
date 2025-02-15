@@ -17,11 +17,12 @@ export const GAME_EVENTS = {
 }
 
 // STARTING - 3 second startup time
-// loop for each round:
+// ==== loop for each round x3
 // SELECTING - current painter is selecting a word
 // PAINTING - current painter is painting
 // INTERMISSION - round summary information, data presentation
-// NOT_STARTED - no more actions
+// ==== end loop
+// ENDED - no more actions
 
 /**
  *

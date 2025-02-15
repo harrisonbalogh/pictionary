@@ -118,8 +118,6 @@ export default function Lobby() {
       // Only painter can see wordChoices
       selectingData.wordChoices = wordChoices;
       send(painter, SERVER_MESSAGE_OUT.GameEventSelecting, selectingData);
-      // Clear paint
-      this.users.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeClear));
     } else
     if (event === GAME_EVENTS.Painting) {
       let { painter, guessers, wordChoice, timeRemaining } = data;
