@@ -216,7 +216,7 @@ function initUi() {
     connect(Ui.inputDisplayName.value);
   }
   Ui.buttonDisconnect.onclick = _ => {
-    Server.disconnect()
+    _server.disconnect()
   }
   Ui.buttonGameStart.onclick = _ => {
     _server.sendGameStart()
