@@ -342,7 +342,7 @@ function connect(name) {
       Ui.buttonConnect.classList.toggle('hidden', false);
       Ui.buttonDisconnect.classList.toggle('hidden', true);
     });
-    this.addEventListener(MSG_IN.GameStart, ({detail: {rounds}}) => {
+    this.addEventListener(MSG_IN.GameStarted, ({detail: {rounds}}) => {
       gameStart = true; // Memo
       // Clear canvas
       canvasContext.fillStyle = 'white';

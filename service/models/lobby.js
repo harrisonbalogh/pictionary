@@ -104,7 +104,7 @@ export default function Lobby() {
     this._gameState = new GameState(this.users, this.gameSettings, this.gameEventHandler.bind(this));
 
     // Clear paint
-    this.users.forEach(user => send(user, SERVER_MESSAGE_OUT.GameStart, { rounds: this.gameSettings.rounds }));
+    this.users.forEach(user => send(user, SERVER_MESSAGE_OUT.GameStarted, { rounds: this.gameSettings.rounds }));
   }
 
   /** Handle game state events. */

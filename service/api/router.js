@@ -1,22 +1,22 @@
-import * as Controller from './controller.js'
+import * as LobbyController from './lobby_controller.js'
+import * as GameController from './game_controller.js'
 import { SERVER_MESSAGE_IN, ERROR_MESSAGES } from '@harxer/painter-lib';
-
 
 /** Handled inbound socket messages. */
 const messageHandler = {
-    [SERVER_MESSAGE_IN.DisplayName]: Controller.displayName,
+    [SERVER_MESSAGE_IN.DisplayName]: LobbyController.displayName,
 
-    [SERVER_MESSAGE_IN.GameStart]: Controller.startGame,
-    [SERVER_MESSAGE_IN.GameGuessWord]: Controller.guessWord,
+    [SERVER_MESSAGE_IN.GameStart]: GameController.startGame,
+    [SERVER_MESSAGE_IN.GameGuessWord]: GameController.guessWord,
 
-    [SERVER_MESSAGE_IN.Stroke]: Controller.stroke,
-    [SERVER_MESSAGE_IN.StrokeEnd]: Controller.strokeEnd,
-    [SERVER_MESSAGE_IN.StrokeClear]: Controller.strokeClear,
-    [SERVER_MESSAGE_IN.StrokeSettings]: Controller.strokeSettings,
+    [SERVER_MESSAGE_IN.Stroke]: GameController.stroke,
+    [SERVER_MESSAGE_IN.StrokeEnd]: GameController.strokeEnd,
+    [SERVER_MESSAGE_IN.StrokeClear]: GameController.strokeClear,
+    [SERVER_MESSAGE_IN.StrokeSettings]: GameController.strokeSettings,
 
-    [SERVER_MESSAGE_IN.LobbyJoin]: Controller.joinLobby,
-    [SERVER_MESSAGE_IN.LobbyExit]: Controller.exitLobby,
-    [SERVER_MESSAGE_IN.LobbyCreate]: Controller.createLobby,
+    [SERVER_MESSAGE_IN.LobbyJoin]: LobbyController.joinLobby,
+    [SERVER_MESSAGE_IN.LobbyExit]: LobbyController.exitLobby,
+    [SERVER_MESSAGE_IN.LobbyCreate]: LobbyController.createLobby,
 }
 
 export function socketMessage(user, msg) {

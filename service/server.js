@@ -1,6 +1,6 @@
 import ws from 'ws';
 import * as Router from './api/router.js';
-import * as Controller from './api/controller.js';
+import * as LobbyController from './api/lobby_controller.js';
 import { SERVER_MESSAGE_OUT, ERROR_MESSAGES, WS_SOCKET_CLOSE_CODE_NORMAL } from '@harxer/painter-lib';
 import UserModel from './models/user.js';
 
@@ -34,6 +34,15 @@ export function send(user, type, data) {
   user.socket.send(JSON.stringify({type, data}));
 }
 
+/**
+ * Send fail message to msg source socket.
+ * @param {User} user Message target.
+ * @param {*} error - OPTIONAL Error message sent with message.
+ */
+export function fail(user, error = ERROR_MESSAGES.Unspecified) {
+  send(user, SERVER_MESSAGE_OUT.Fail, { error });
+}
+
 /** Check if a display name is unused. @return {boolean}  */
 export function nameAvailable(name) {
   return _users.every(user => user.displayName !== name.toLowerCase().trim());
@@ -56,7 +65,7 @@ socketServer.on('connection', (socket, req) => {
 
   socket.on('message', msg => Router.socketMessage(user, msg))
   socket.on('close', _ => {
-    if (user.lobby !== undefined) Controller.exitLobby(user);
+    if (user.lobby !== undefined) LobbyController.exitLobby(user);
     _users.splice(_users.indexOf(user), 1);
 
     // Cleanup timer
