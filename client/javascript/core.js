@@ -278,7 +278,7 @@ function connect(name) {
       Ui.buttonLobbyCreate.classList.toggle('hidden', true);
       Ui.buttonLobbyExit.classList.toggle('hidden', false);
       // Game elements
-      let iAmOwner = displayName === owner;
+      iAmOwner = displayName === owner;
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner || gameStart);
     });
     this.addEventListener(MSG_IN.LobbyExited, () => {
@@ -374,7 +374,7 @@ function connect(name) {
       }
       setCountdown(timeRemaining);
     });
-    this.addEventListener(MSG_IN.GameEventPainting, ({detail: {guessers, painter, timeRemaining, wordChoice}}) => {
+    this.addEventListener(MSG_IN.GameEventPainting, ({detail: {painter, timeRemaining, wordChoice, wordHint}}) => {
       iAmPainter = (displayName === painter);
       Ui.footerControls.classList.toggle('hidden', !iAmPainter);
       if (iAmPainter) {
@@ -386,10 +386,15 @@ function connect(name) {
         Ui.inputGameWord.innerHTML = "";
         Ui.inputGameWord.classList.toggle('hidden', false);
         Ui.buttonGameSend.classList.toggle('hidden', false);
-        Ui.labelGameMessage.innerHTML = `${painter} is painting...`;
+        Ui.labelGameMessage.innerHTML = `${painter} is painting: ${wordHint}`;
         releaseBrush();
       }
       setCountdown(timeRemaining);
+    });
+    this.addEventListener(MSG_IN.GameEventWordHint, ({detail: {painter, wordHint}}) => {
+      if (displayName !== painter) {
+        Ui.labelGameMessage.innerHTML = `${painter} is painting: ${wordHint}`;
+      }
     });
     this.addEventListener(MSG_IN.GameEventCorrectGuess, ({detail: {userPoints, guesser}}) => {
       if (guesser === displayName) {
@@ -397,6 +402,7 @@ function connect(name) {
         Ui.labelGameMessage.innerHTML = `You guessed correctly! +${pts} points`;
         Ui.inputGameWord.classList.toggle('hidden', true);
         Ui.buttonGameSend.classList.toggle('hidden', true);
+        releaseBrush();
       } else {
         // console.log(`${guesser} guessed correctly!`, userPoints);
       }
@@ -407,6 +413,7 @@ function connect(name) {
       Ui.labelGameMessage.innerHTML = `Round over`;
       Ui.inputGameWord.classList.toggle('hidden', true);
       Ui.buttonGameSend.classList.toggle('hidden', true);
+      releaseBrush();
       setCountdown(timeRemaining);
     });
     this.addEventListener(MSG_IN.GameEventEnded, () => {
@@ -422,20 +429,20 @@ function connect(name) {
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner);
     });
-    this.addEventListener(MSG_IN.Stroke, ({detail: {brushX, brushY}}) => {
+    this.addEventListener(MSG_IN.Stroke, ({detail: {x, y}}) => {
       // Start point
       if (lastNetworkedStrokePosition.x === undefined) {
-        lastNetworkedStrokePosition.x = brushX;
-        lastNetworkedStrokePosition.y = brushY;
+        lastNetworkedStrokePosition.x = x;
+        lastNetworkedStrokePosition.y = y;
         canvasContext.beginPath();
-        canvasContext.moveTo(brushX, brushY);
+        canvasContext.moveTo(x, y);
       } else {
         // Stroke to moved position
-        canvasContext.lineTo(brushX, brushY);
+        canvasContext.lineTo(x, y);
         canvasContext.stroke();
         // Reset start point
         canvasContext.beginPath();
-        canvasContext.moveTo(brushX, brushY);
+        canvasContext.moveTo(x, y);
       }
     });
     this.addEventListener(MSG_IN.StrokeEnd, () => {

@@ -11,6 +11,7 @@ const STATE = {
 export const GAME_EVENTS = {
   Selecting: 'selecting',
   Painting: 'painting',
+  PaintHint: 'paint_hint',
   Intermission: 'intermission',
   CorrectGuess: 'user_correct',
   Ended: 'ended'
@@ -24,13 +25,18 @@ export const GAME_EVENTS = {
 // ==== end loop
 // ENDED - no more actions
 
+const LETTER_REGEX = /[a-zA-Z]/g;
+
 /**
- *
  * @param {[int]} users array of users
  */
-export default function GameState(users, {rounds, timer, wordChoiceCount}, eventHandler) {
+export default function GameState(users, {hintCount, rounds, timer, wordChoiceCount}, eventHandler) {
   if (users.length === 0) throw Error(THROW_ERROR.GAME.SETUP.NO_USERS);
 
+  /**
+   * Game state memos.
+   * @private
+   */
   this._current = {
     /** Current game state. @type {STATE} */
     state: STATE.Starting,
@@ -48,8 +54,37 @@ export default function GameState(users, {rounds, timer, wordChoiceCount}, event
     /** Current set of users guessing. @type {[User]} */
     guessers: [...users],
 
-    /** Painter's word selection. If undefined, painter is selecting. @type {string?} */
-    wordChoice: undefined,
+    /** Memo of `_current.wordChoice`. */
+    _wordChoice: undefined,
+    /**
+     * Painter's word selection. If undefined, painter is selecting.
+     * This should only contain letters and spaces.
+     * @type {string?}
+     */
+    get wordChoice() {
+      return this._wordChoice;
+    },
+    set wordChoice(word) {
+      if (word === undefined) {
+        this._wordChoice = undefined;
+        this.wordHint = undefined;
+        this.hintsGiven = undefined;
+      } else {
+        this._wordChoice = word;
+        this.hintsGiven = 0;
+        this.wordHint = word.replaceAll(LETTER_REGEX, '_');
+      }
+    },
+
+    /**
+     * Guesser's hint of painter's selected word. Letters from `_current.wordChoice` are
+     * replaced with underscores and hints replace underscores with letters from selected word.
+     * @type {string}
+     */
+    wordHint: undefined,
+
+    /** Number of letters revealed in this round. @type {int?} if undefined, not in painting state */
+    hintsGiven: undefined,
 
     /** Painter's word options. If undefined, painter is not selecting. @type {[string]?} */
     wordChoices: undefined,
@@ -72,12 +107,19 @@ export default function GameState(users, {rounds, timer, wordChoiceCount}, event
     /** Set at initialization. @type {int} total number of rounds */
     rounds: rounds,
 
+    /** Number of letters revealed from `_current.wordChoice`. Revealed at equal intervals. */
+    hintCount: hintCount,
+
     /** TODO - Note and avoid used words */
     // usedWords: [],
 
-    /** @type {[string]} All words available */
+    /**
+     * @type {[string]} All available words.
+     *
+     * !!! Each word should only use letters and spaces.
+     */
     wordChoices: [
-      'Apple', 'Banana', 'Orange', 'Kiwi', 'Mango'
+      'The Big Apple', 'My Pocket Banana', 'The Ugly Orange', 'A Tiny Kiwi', 'Oh Fango Mango'
     ],
 
     /** @type {int} Number of words painter can select from */
@@ -91,6 +133,11 @@ export default function GameState(users, {rounds, timer, wordChoiceCount}, event
   const TIMING_SELECTING = 5000;
   const TIMING_PAINTING = timer;
   const TIMING_INTERMISSION = 3000;
+
+  /** @type {Timeout} For game state machine next state check */
+  this._advanceTimer;
+  /** @type {Timeout} For painting stage hint reveals */
+  this._wordHintTimer;
 
   /** Game state machine tick */
   this._advanceGame = () => {
@@ -133,15 +180,44 @@ export default function GameState(users, {rounds, timer, wordChoiceCount}, event
         painter: this._current.painter,
         guessers: this._current.guessers,
         wordChoice: this._current.wordChoice,
+        wordHint: this._current.wordHint,
         timeRemaining: TIMING_PAINTING
       });
       this._advanceTimer = setTimeout(this._advanceGame.bind(this), TIMING_PAINTING);
+      if (this._data.hintCount > 0) {
+        let hintInterval = TIMING_PAINTING / (this._data.hintCount + 1);
+        const sendNextHint = _ => {
+          this._current.hintsGiven += 1;
+
+          // Select random letter to reveal
+          let underscoreIndices = [];
+          for (let i = 0; i < this._current.wordHint.length; i++) {
+            if (this._current.wordHint[i] === '_') {
+              underscoreIndices.push(i);
+            }
+          }
+          if (underscoreIndices.length <= 1) return; // Dont reveal last letter... TODO limit hints more...
+          let revealIndex = underscoreIndices[Math.floor(Math.random() * underscoreIndices.length)];
+          this._current.wordHint = this._current.wordHint.slice(0, revealIndex) + this._current.wordChoice[revealIndex] + this._current.wordHint.slice(revealIndex + 1);
+
+          this._data.eventHandler(GAME_EVENTS.PaintHint, {
+            painter: this._current.painter,
+            guessers: this._current.guessers,
+            wordHint: this._current.wordHint
+          });
+          if (this._current.hintsGiven < this._data.hintCount) {
+            this._wordHintTimer = setTimeout(sendNextHint, hintInterval);
+          }
+        }
+        this._wordHintTimer = setTimeout(sendNextHint, hintInterval);
+      }
       return;
     }
 
     if (this._current.state === STATE.Painting) {
       this._current.correctUsers = []; // Reset correct users
       this._current.paintingStartTime = undefined;
+      clearTimeout(this._wordHintTimer); // In case we skip ahead to Intermission
 
       // State updates
       this._current.state = STATE.Intermission;
@@ -248,7 +324,8 @@ export default function GameState(users, {rounds, timer, wordChoiceCount}, event
     }
 
     if (user === this._current.painter && [STATE.Selecting, STATE.Painting].includes(this._current.state)) {
-      this._current.state = STATE.Intermission;
+      this._current.state = STATE.Intermission; // We shouldn't be setting _current.state outside of _advanceGame function
+      clearTimeout(this._wordHintTimer); // Since we manually set state, clear word hint Timeout
       this._advanceGame();
 
       // TODO - cheat vector

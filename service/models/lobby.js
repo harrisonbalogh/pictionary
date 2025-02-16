@@ -10,7 +10,8 @@ const STROKE_SETTINGS_DEFAULT = {
 const GAME_SETTINGS_DEFAULT = {
   ROUNDS: 3,
   TIMER: 30 * 1000,
-  WORD_CHOICE_COUNT: 3
+  WORD_CHOICE_COUNT: 3,
+  HINT_COUNT: 2,
 }
 
 /** New UserData obj. */
@@ -39,7 +40,8 @@ export default function Lobby() {
   this.gameSettings = {
     rounds: GAME_SETTINGS_DEFAULT.ROUNDS,
     timer: GAME_SETTINGS_DEFAULT.TIMER,
-    wordChoiceCount: GAME_SETTINGS_DEFAULT.WORD_CHOICE_COUNT
+    wordChoiceCount: GAME_SETTINGS_DEFAULT.WORD_CHOICE_COUNT,
+    hintCount: GAME_SETTINGS_DEFAULT.HINT_COUNT,
   }
 
   this.strokeSettings = {
@@ -120,18 +122,26 @@ export default function Lobby() {
       send(painter, SERVER_MESSAGE_OUT.GameEventSelecting, selectingData);
     } else
     if (event === GAME_EVENTS.Painting) {
-      let { painter, guessers, wordChoice, timeRemaining } = data;
+      let { painter, guessers, wordChoice, timeRemaining, wordHint } = data;
       this.painter = painter; // Memo
       this.guessers = guessers; // Memo
       let selectingData = {
-        guessers: guessers.map(guesser => guesser.displayName),
         painter: painter.displayName,
+        wordHint,
         timeRemaining
       }
       guessers.forEach(guesser => send(guesser, SERVER_MESSAGE_OUT.GameEventPainting, selectingData));
-      // Only painter can see wordChoice
+      // Only painter can see wordChoice and ignores wordHint
       selectingData.wordChoice = wordChoice;
+      delete selectingData.wordHint;
       send(painter, SERVER_MESSAGE_OUT.GameEventPainting, selectingData)
+    } else
+    if (event === GAME_EVENTS.PaintHint) {
+      let { guessers, painter, wordHint } = data;
+      guessers.forEach(guesser => send(guesser, SERVER_MESSAGE_OUT.GameEventWordHint, {
+        painter: painter.displayName,
+        wordHint
+      }));
     } else
     if (event === GAME_EVENTS.CorrectGuess) {
       let { userPoints, guesser } = data;
@@ -179,5 +189,5 @@ function getUniqueID() {
   function s4() {
       return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
   }
-  return `${s4()}${s4()}-${s4()}`;
+  return `${s4()}${s4()}${s4()}`;
 };
