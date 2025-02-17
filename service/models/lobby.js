@@ -145,18 +145,18 @@ export default function Lobby() {
     } else
     if (event === GAME_EVENTS.CorrectGuess) {
       let { userPoints, guesser } = data;
-      this.guessers.concat(painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventCorrectGuess, { userPoints, guesser: guesser.displayName }));
+      this.guessers.concat(this.painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventCorrectGuess, { userPoints, guesser: guesser.displayName }));
     } else
     if (event === GAME_EVENTS.Intermission) {
       let { timeRemaining } = data;
-      this.guessers.concat(painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventIntermission, { timeRemaining }));
+      this.guessers.concat(this.painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventIntermission, { timeRemaining }));
       this.painter = undefined; // Clear memo
       this.guessers = undefined; // Clear memo
     } else
     if (event === GAME_EVENTS.Ended) {
-      this.guessers.concat(painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventEnded));
       this.painter = undefined; // Clear memo
       this.guessers = undefined // Clear memo
+      this.users.forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventEnded));
       this._gameState = undefined;
     }
   }
