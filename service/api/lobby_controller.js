@@ -31,7 +31,7 @@ export function displayName(source, { displayName }) {
   send(source, SERVER_MESSAGE_OUT.Connected, { displayName });
 }
 
-export function joinLobby(source, { id: lobbyId }) {
+export function join(source, { id: lobbyId }) {
   if (source.lobby !== undefined) return fail(source, ERROR_MESSAGES.Lobby.AlreadyIn);
   let lobby = findLobby(lobbyId);
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotFound);
@@ -46,7 +46,7 @@ export function joinLobby(source, { id: lobbyId }) {
   );
 }
 
-export function exitLobby(source) {
+export function exit(source) {
   let lobby = source.lobby;
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
 
@@ -68,7 +68,7 @@ export function exitLobby(source) {
   send(source, SERVER_MESSAGE_OUT.LobbyExited)
 }
 
-export function createLobby(source) {
+export function create(source) {
   if (source.lobby !== undefined) return fail(source, ERROR_MESSAGES.Lobby.AlreadyIn);
 
   // Policy: anyone can create a lobby, no limits
@@ -83,4 +83,14 @@ export function createLobby(source) {
 
   // Notify source
   send(source, SERVER_MESSAGE_OUT.LobbyJoined, lobby.lobbyInfo())
+}
+
+export function kick(source, { displayName }) {
+  let lobby = source.lobby;
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
+  if (source !== lobby.owner) return fail(source, ERROR_MESSAGES.Lobby.NotOwner);
+  let target = lobby.resolveDisplayName(displayName);
+  if (target === undefined) return fail(source, ERROR_MESSAGES.Lobby.UserNotFound);
+
+  this.exit(target);
 }

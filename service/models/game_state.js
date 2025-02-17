@@ -230,7 +230,7 @@ export default function GameState(users, {hintCount, rounds, timer, wordChoiceCo
 
     if (this._current.state === STATE.Intermission) {
       // Game over
-      if (this._current.round >= this._data.rounds) {
+      if (this._current.round >= this._data.rounds && this._current.painter === this._current.users[this._current.users.length - 1]) {
         this._current.painter = undefined;
         // State updates
         this._current.state = STATE.Ended;
@@ -284,7 +284,11 @@ export default function GameState(users, {hintCount, rounds, timer, wordChoiceCo
 
   /** Populate current.wordChoices and clear current.wordChoice */
   this._generateWordChoices = () => {
-    if (this._data.wordChoices.length < this._data.wordChoiceCount) return;
+    if (this._data.wordChoices.length < this._data.wordChoiceCount) {
+      this._current.wordChoices = this._data.wordChoices;
+      this._current.wordChoice = undefined;
+      return;
+    }
 
     let currentWordChoiceIndexes = [];
 
@@ -318,6 +322,8 @@ export default function GameState(users, {hintCount, rounds, timer, wordChoiceCo
     // End game if no users remain
     if (this._current.users.length === 1) {
       clearTimeout(this._advanceTimer);
+      // TODO - Shouldnt be manually setting state, have to then remember to clear timeouts
+      clearTimeout(this._wordHintTimer);
       this._current.state = STATE.Ended;
       this._data.eventHandler(GAME_EVENTS.Ended, { userPoints: {} });
       return;

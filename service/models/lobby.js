@@ -88,7 +88,8 @@ export default function Lobby() {
     return {
       id: this.id,
       users: this.users.map(u => u.displayName),
-      owner: this.owner.displayName
+      owner: this.owner.displayName,
+      settings: this.gameSettings
     }
   }
 
@@ -105,6 +106,35 @@ export default function Lobby() {
 
     // Clear paint
     this.users.forEach(user => send(user, SERVER_MESSAGE_OUT.GameStarted, { rounds: this.gameSettings.rounds }));
+  }
+
+  this.setGameSettings = function(settings) {
+    if (this.isGameStarted()) {
+      throw Error(THROW_ERROR.GAME.STARTED)
+    }
+    let { rounds, timer, wordChoiceCount, hintCount } = settings;
+
+    if (rounds !== undefined) {
+      // Policy: Max rounds 10, min 1
+      rounds = Math.max(Math.min(rounds, 10), 1);
+      this.gameSettings.rounds = parseInt(rounds);
+    }
+
+    if (timer !== undefined) {
+      // Policy: Timer maxed at 10 minutes, min 5 seconds
+      timer = Math.max(Math.min(timer, 10*60*1000), 5*1000);
+      this.gameSettings.timer = parseInt(timer);
+    }
+
+    if (wordChoiceCount !== undefined) {
+      wordChoiceCount = Math.max(wordChoiceCount, 1);
+      this.gameSettings.wordChoiceCount = parseInt(wordChoiceCount);
+    }
+
+    if (hintCount !== undefined) {
+      hintCount = Math.max(hintCount, 0);
+      this.gameSettings.hintCount = parseInt(hintCount);
+    }
   }
 
   /** Handle game state events. */
@@ -183,11 +213,15 @@ export default function Lobby() {
       }
     }
   }
+
+  this.resolveDisplayName = function(displayName) {
+    return this.users.find(user => user.displayName === displayName);
+  }
 }
 
 function getUniqueID() {
   function s4() {
       return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
   }
-  return `${s4()}${s4()}${s4()}`;
+  return `${s4()}`;
 };

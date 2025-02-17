@@ -15,15 +15,34 @@
     <div class="content">
 
       <div class="header">
-        <p style="display: inline-block">User:</p>
-        <p id="label-user-id" class='disabled' style="display: inline-block">-</p>
+        <p id="label-user-id" class='hidden' style="display: inline-block;"></p>
+        <input id="input-displayName" title="displayName"></input>
+        <button id="button-connect" title="connect">
+          Connect
+        </button>
+        <button id="button-disconnect" class="hidden" title="disconnect">
+          Disconnect
+        </button>
         <div></div>
-        <p id="label-lobby-id" class="hidden">-</p>
-        <div></div>
-        <p id="label-lobby-owner" class="hidden">-</p>
-        <div></div>
-        <p id="label-lobby-users" class="hidden">-</p>
-        <div></div>
+        <p id="label-lobby-id" class="hidden" style="display: inline-block;"></p>
+        <input id="input-lobby-join" class="hidden" title="lobby-join"></input>
+        <button id="button-lobby-join" class="hidden" title="lobby-join">
+          Join Lobby
+        </button>
+        <button id="button-lobby-create" class="hidden" title="lobby-create">
+          Create Lobby
+        </button>
+        <button id="button-lobby-exit" class="hidden" title="lobby-exit">
+          Exit Lobby
+        </button>
+        <p id="label-lobby-owner" class="hidden"></p>
+        <p id="label-lobby-users" class="hidden"></p>
+        <div id="container-lobby-settings" class="hidden" >
+          <input id="input-lobby-settings-rounds" title="lobby-settings-rounds"></input>
+          <input id="input-lobby-settings-timer" title="lobby-settings-timer"></input>
+          <input id="input-lobby-settings-wordChoiceCount" title="lobby-settings-wordChoiceCount"></input>
+          <input id="input-lobby-settings-hintCount" title="lobby-settings-hintCount"></input>
+        </div>
         <p id="label-lobby-painter" class="hidden"></p>
         <div></div>
         <p id="label-game-message" class="hidden"></p>
@@ -71,24 +90,6 @@
       </button>
       <button id="button-game-start" class="hidden" title="game-start">
         Start Game
-      </button>
-
-      <input id="input-lobby-join" class="hidden" title="lobby-join"></input>
-      <button id="button-lobby-join" class="hidden" title="lobby-join">
-        Join Lobby
-      </button>
-      <button id="button-lobby-create" class="hidden" title="lobby-create">
-        Create Lobby
-      </button>
-      <button id="button-lobby-exit" class="hidden" title="lobby-exit">
-        Exit Lobby
-      </button>
-      <input id="input-displayName" title="displayName"></input>
-      <button id="button-connect" title="connect">
-        Connect
-      </button>
-      <button id="button-disconnect" class="hidden" title="disconnect">
-        Disconnect
       </button>
 
     </div>

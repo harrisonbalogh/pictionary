@@ -37,7 +37,7 @@ export function send(user, type, data) {
 /**
  * Send fail message to msg source socket.
  * @param {User} user Message target.
- * @param {*} error - OPTIONAL Error message sent with message.
+ * @param {string?} error - OPTIONAL Error message sent with message.
  */
 export function fail(user, error = ERROR_MESSAGES.Unspecified) {
   send(user, SERVER_MESSAGE_OUT.Fail, { error });
@@ -65,7 +65,7 @@ socketServer.on('connection', (socket, req) => {
 
   socket.on('message', msg => Router.socketMessage(user, msg))
   socket.on('close', _ => {
-    if (user.lobby !== undefined) LobbyController.exitLobby(user);
+    if (user.lobby !== undefined) LobbyController.exit(user);
     _users.splice(_users.indexOf(user), 1);
 
     // Cleanup timer

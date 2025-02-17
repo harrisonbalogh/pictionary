@@ -6,6 +6,7 @@ import { SERVER_MESSAGE_IN, ERROR_MESSAGES } from '@harxer/painter-lib';
 const messageHandler = {
     [SERVER_MESSAGE_IN.DisplayName]: LobbyController.displayName,
 
+    [SERVER_MESSAGE_IN.GameSettings]: GameController.gameSettings,
     [SERVER_MESSAGE_IN.GameStart]: GameController.startGame,
     [SERVER_MESSAGE_IN.GameGuessWord]: GameController.guessWord,
 
@@ -14,9 +15,10 @@ const messageHandler = {
     [SERVER_MESSAGE_IN.StrokeClear]: GameController.strokeClear,
     [SERVER_MESSAGE_IN.StrokeSettings]: GameController.strokeSettings,
 
-    [SERVER_MESSAGE_IN.LobbyJoin]: LobbyController.joinLobby,
-    [SERVER_MESSAGE_IN.LobbyExit]: LobbyController.exitLobby,
-    [SERVER_MESSAGE_IN.LobbyCreate]: LobbyController.createLobby,
+    [SERVER_MESSAGE_IN.LobbyJoin]: LobbyController.join,
+    [SERVER_MESSAGE_IN.LobbyExit]: LobbyController.exit,
+    [SERVER_MESSAGE_IN.LobbyCreate]: LobbyController.create,
+    [SERVER_MESSAGE_IN.LobbyKick]: LobbyController.kick,
 }
 
 export function socketMessage(user, msg) {

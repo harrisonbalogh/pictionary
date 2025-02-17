@@ -101,6 +101,13 @@ export const buttonConnect = document.getElementById('button-connect')
 export const inputDisplayName = document.getElementById('input-displayName')
 export const buttonDisconnect = document.getElementById('button-disconnect')
 
+export const containerLobbySettings = document.getElementById('container-lobby-settings');
+
+export const inputLobbySettingsRounds = document.getElementById('input-lobby-settings-rounds');
+export const inputLobbySettingsTimer = document.getElementById('input-lobby-settings-timer');
+export const inputLobbySettingsWordChoiceCount = document.getElementById('input-lobby-settings-wordChoiceCount');
+export const inputLobbySettingsHintCount = document.getElementById('input-lobby-settings-hintCount');
+
 export const inputGameWord = document.getElementById('input-game-word');
 export const buttonGameSend = document.getElementById('button-game-send');
 export const buttonGameStart = document.getElementById('button-game-start');

@@ -48,6 +48,18 @@ export function startGame(source) {
   lobby.startGame();
 }
 
+export function gameSettings(source, { settings }) {
+  let lobby = source.lobby;
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
+  if (source !== lobby.owner) return fail(source, ERROR_MESSAGES.Lobby.NotOwner);
+
+  lobby.setGameSettings(settings);
+  // Inform all users of settings change
+  lobby.users.forEach(user =>
+    send(user, SERVER_MESSAGE_OUT.LobbyJoined, lobby.lobbyInfo())
+  );
+}
+
 export function guessWord(source, { word }) {
   let lobby = source.lobby;
   if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);

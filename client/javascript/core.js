@@ -234,6 +234,26 @@ function initUi() {
   Ui.buttonLobbyExit.onclick = _ => {
     _server.sendLobbyExit();
   }
+  Ui.inputLobbySettingsRounds.onchange = _ => {
+    _server.sendGameSettings({
+      rounds: Ui.inputLobbySettingsRounds.value
+    })
+  }
+  Ui.inputLobbySettingsTimer.onchange = _ => {
+    _server.sendGameSettings({
+      timer: Ui.inputLobbySettingsTimer.value
+    })
+  }
+  Ui.inputLobbySettingsWordChoiceCount.onchange = _ => {
+    _server.sendGameSettings({
+      wordChoiceCount: Ui.inputLobbySettingsWordChoiceCount.value
+    })
+  }
+  Ui.inputLobbySettingsHintCount.onchange = _ => {
+    _server.sendGameSettings({
+      hintCount: Ui.inputLobbySettingsHintCount.value
+    })
+  }
 
   Array.from(Ui.colorPalette.children).forEach(child => {
     child.addEventListener('click', e => {
@@ -255,17 +275,18 @@ function initUi() {
 /** Connect to painter service. */
 function connect(name) {
   _server = new Server(Config.url.painter, name, function({detail: {displayName}}) {
-    Ui.labelUserId.innerHTML = displayName;
+    Ui.labelUserId.innerHTML = 'User: ' + displayName;
     // Connect elements
     Ui.inputDisplayName.classList.toggle('hidden', true);
     Ui.buttonConnect.classList.toggle('hidden', true);
+    Ui.labelUserId.classList.toggle('hidden', false);
     Ui.buttonDisconnect.classList.toggle('hidden', false);
     // Lobby elements
     Ui.inputLobbyJoin.classList.toggle('hidden', false);
     Ui.buttonLobbyJoin.classList.toggle('hidden', false);
     Ui.buttonLobbyCreate.classList.toggle('hidden', false);
 
-    this.addEventListener(MSG_IN.LobbyJoined, ({detail: {id, users, owner}}) => {
+    this.addEventListener(MSG_IN.LobbyJoined, ({detail: {id, users, owner, settings: {rounds, timer, wordChoiceCount, hintCount}}}) => {
       Ui.labelLobbyId.classList.toggle('hidden', false);
       Ui.labelLobbyUsers.classList.toggle('hidden', false);
       Ui.labelLobbyOwner.classList.toggle('hidden', false);
@@ -279,6 +300,11 @@ function connect(name) {
       Ui.buttonLobbyExit.classList.toggle('hidden', false);
       // Game elements
       iAmOwner = displayName === owner;
+      Ui.inputLobbySettingsRounds.value = rounds;
+      Ui.inputLobbySettingsTimer.value = timer;
+      Ui.inputLobbySettingsWordChoiceCount.value = wordChoiceCount;
+      Ui.inputLobbySettingsHintCount.value = hintCount;
+      Ui.containerLobbySettings.classList.toggle('hidden', !iAmOwner || gameStart);
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner || gameStart);
     });
     this.addEventListener(MSG_IN.LobbyExited, () => {
@@ -304,6 +330,7 @@ function connect(name) {
       // Game elements
       Ui.labelGameTimer.classList.toggle('hidden', true);
       Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.containerLobbySettings.classList.toggle('hidden', true);
       Ui.labelLobbyPainter.classList.toggle('hidden', true);
       Ui.labelGameMessage.classList.toggle('hidden', true);
       Ui.inputGameWord.classList.toggle('hidden', true);
@@ -329,6 +356,7 @@ function connect(name) {
       Ui.labelGameTimer.classList.toggle('hidden', true);
       Ui.labelLobbyPainter.classList.toggle('hidden', true);
       Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.containerLobbySettings.classList.toggle('hidden', true);
       Ui.labelGameMessage.classList.toggle('hidden', true);
       Ui.inputGameWord.classList.toggle('hidden', true);
       Ui.buttonGameSend.classList.toggle('hidden', true);
@@ -338,6 +366,7 @@ function connect(name) {
       Ui.buttonLobbyCreate.classList.toggle('hidden', true);
       Ui.buttonLobbyExit.classList.toggle('hidden', true);
       // Connect elements
+      Ui.labelUserId.classList.toggle('hidden', true);
       Ui.inputDisplayName.classList.toggle('hidden', false);
       Ui.buttonConnect.classList.toggle('hidden', false);
       Ui.buttonDisconnect.classList.toggle('hidden', true);
@@ -350,6 +379,7 @@ function connect(name) {
       canvasContext.fillStyle = drawStyle.color;
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.containerLobbySettings.classList.toggle('hidden', true);
       Ui.labelGameMessage.classList.toggle('hidden', false);
       Ui.labelGameMessage.innerHTML = `Game Started... ${rounds} round${rounds === 1 ? '' : 's'}`
       // Paint elements
@@ -428,6 +458,7 @@ function connect(name) {
       Ui.content.classList.toggle('hidden', true);
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner);
+      Ui.containerLobbySettings.classList.toggle('hidden', !iAmOwner);
     });
     this.addEventListener(MSG_IN.Stroke, ({detail: {x, y}}) => {
       // Start point
