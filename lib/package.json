@@ -4,5 +4,6 @@
   "author": "",
   "license": "ISC",
   "main": "MsgTypes.js",
-  "type": "module"
+  "type": "module",
+  "repository": "git://github.com:harrisonbalogh/pictionary.git"
 }
