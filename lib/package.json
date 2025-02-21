@@ -1,6 +1,6 @@
 {
-  "name": "@harxer/painter-lib",
-  "version": "0.0.1",
+  "name": "@harrisonbalogh/painter-lib",
+  "version": "0.0.2",
   "author": "",
   "license": "ISC",
   "main": "MsgTypes.js",
