@@ -16,7 +16,7 @@
 
       <div class="header">
         <p id="label-user-id" class='hidden' style="display: inline-block;"></p>
-        <input id="input-displayName" title="displayName"></input>
+        <input id="input-displayName" title="displayName" placeholder="Display Name"></input>
         <button id="button-connect" title="connect">
           Connect
         </button>
@@ -25,7 +25,7 @@
         </button>
         <div></div>
         <p id="label-lobby-id" class="hidden" style="display: inline-block;"></p>
-        <input id="input-lobby-join" class="hidden" title="lobby-join"></input>
+        <input id="input-lobby-join" class="hidden" title="lobby-join" placeholder="Lobby Code"></input>
         <button id="button-lobby-join" class="hidden" title="lobby-join">
           Join Lobby
         </button>
@@ -37,17 +37,18 @@
         </button>
         <p id="label-lobby-owner" class="hidden"></p>
         <p id="label-lobby-users" class="hidden"></p>
-        <div id="container-lobby-settings" class="hidden" >
-          <input id="input-lobby-settings-rounds" title="lobby-settings-rounds"></input>
-          <input id="input-lobby-settings-timer" title="lobby-settings-timer"></input>
-          <input id="input-lobby-settings-wordChoiceCount" title="lobby-settings-wordChoiceCount"></input>
-          <input id="input-lobby-settings-hintCount" title="lobby-settings-hintCount"></input>
+        <div id="container-lobby-settings" class="hidden">
+          <input id="input-lobby-settings-rounds" title="lobby-settings-rounds" placeholder="Rounds"></input>
+          <input id="input-lobby-settings-timer" title="lobby-settings-timer" placeholder="Timer (milliseconds)"></input>
+          <input id="input-lobby-settings-wordChoiceCount" title="lobby-settings-wordChoiceCount" placeholder="Word Choice Count"></input>
+          <input id="input-lobby-settings-hintCount" title="lobby-settings-hintCount" placeholder="Letter Hint Counts"></input>
         </div>
-        <p id="label-lobby-painter" class="hidden"></p>
-        <div></div>
-        <p id="label-game-message" class="hidden"></p>
-        <div></div>
-        <p id="label-game-timer" class="hidden"></p>
+        <div id="container-game" class="hidden">
+          <p id="label-lobby-painter"></p>
+          <p id="label-game-message"></p>
+          <ul id="list-word-choices"></ul>
+          <p id="label-game-timer"></p>
+        </div>
       </div>
 
       <div id="content" class="canvas-container hidden">
@@ -84,7 +85,7 @@
         </div>
       </div>
 
-      <input id="input-game-word" class="hidden" title="game-word"></input>
+      <input id="input-game-word" class="hidden" title="game-word" placeholder="Word Guess"></input>
       <button id="button-game-send" class="hidden" title="game-send">
         Send
       </button>

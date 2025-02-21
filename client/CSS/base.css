@@ -245,3 +245,26 @@ select {
 #label-game-timer {
   float: right;
 }
+
+#list-word-choices {
+  display: inline-block;
+  list-style: none;
+  padding: 0;
+}
+#list-word-choices li {
+  padding: 0 5px;
+  display: inline-block;
+}
+#label-game-timer {
+  border-radius: 20px;
+  border: 6px solid orange;
+  border-width: 0 6px;
+  color: orange;
+  display: inline-block;
+  font-size: 20px;
+  margin: 0;
+  padding: 10px;
+}
+#label-game-message {
+  display: inline-block;
+}

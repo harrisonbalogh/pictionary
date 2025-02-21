@@ -1,6 +1,6 @@
 import GameState, { GAME_EVENTS } from "./game_state.js";
 import { THROW_ERROR } from "../constants.js";
-import { SERVER_MESSAGE_OUT } from '@harxer/painter-lib';
+import { SERVER_MESSAGE_OUT } from '@harrisonbalogh/painter-lib';
 import { send } from '../server.js';
 
 const STROKE_SETTINGS_DEFAULT = {

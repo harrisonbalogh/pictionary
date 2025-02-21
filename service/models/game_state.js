@@ -1,4 +1,5 @@
 import { THROW_ERROR } from "../constants.js";
+import wordChoices from '../word_bank.js';
 import User from "./user.js";
 
 const STATE = {
@@ -118,9 +119,7 @@ export default function GameState(users, {hintCount, rounds, timer, wordChoiceCo
      *
      * !!! Each word should only use letters and spaces.
      */
-    wordChoices: [
-      'The Big Apple', 'My Pocket Banana', 'The Ugly Orange', 'A Tiny Kiwi', 'Oh Fango Mango'
-    ],
+    wordChoices: wordChoices,
 
     /** @type {int} Number of words painter can select from */
     wordChoiceCount: wordChoiceCount,
@@ -130,7 +129,7 @@ export default function GameState(users, {hintCount, rounds, timer, wordChoiceCo
   }
 
   const TIMING_START_DELAY = 3000;
-  const TIMING_SELECTING = 5000;
+  const TIMING_SELECTING = 10000;
   const TIMING_PAINTING = timer;
   const TIMING_INTERMISSION = 3000;
 

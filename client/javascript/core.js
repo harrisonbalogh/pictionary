@@ -42,7 +42,6 @@ let countdown = 0;
 let countdownInterval = undefined;
 const setCountdown = function(timeRemaining) {
   Ui.labelGameTimer.innerHTML = `${timeRemaining / 1000}s`;
-  Ui.labelGameTimer.classList.toggle('hidden', false);
   clearInterval(countdownInterval);
   countdown = timeRemaining / 1000;
   countdownInterval = setInterval(_ => {
@@ -56,7 +55,7 @@ const setCountdown = function(timeRemaining) {
 }
 const clearCountdown = _ => {
   countdown = 0;
-  Ui.labelGameTimer.classList.toggle('hidden', true);
+  Ui.labelGameTimer.innerHTML = `0s`;
   clearInterval(countdownInterval);
 }
 let gameStart = false;
@@ -177,6 +176,10 @@ function initUi() {
     canvasContext.beginPath();
     canvasContext.arc(brushX, brushY, drawStyle.lineWidth / 2, 0, 2 * Math.PI);
     canvasContext.fill();
+
+    // Networked
+    _server.sendStrokeStart(brushX, brushY);
+
     // Set first point for brush movement
     canvasContext.beginPath();
     canvasContext.moveTo(brushX, brushY);
@@ -212,6 +215,9 @@ function initUi() {
     _server.sendStrokeClear()
   }
 
+  Ui.inputDisplayName.onkeydown = ({key}) => {
+    if (key === 'Enter') Ui.buttonConnect.click();
+  }
   Ui.buttonConnect.onclick = _ => {
     connect(Ui.inputDisplayName.value);
   }
@@ -221,12 +227,19 @@ function initUi() {
   Ui.buttonGameStart.onclick = _ => {
     _server.sendGameStart()
   }
+  Ui.inputGameWord.onkeydown = ({key}) => {
+    if (key === 'Enter') Ui.buttonGameSend.click();
+  }
   Ui.buttonGameSend.onclick = _ => {
     let word = Ui.inputGameWord.value;
     _server.sendGameGuessWord(word)
+    Ui.inputGameWord.value = ''
   }
   Ui.buttonLobbyCreate.onclick = _ => {
     _server.sendLobbyCreate();
+  }
+  Ui.inputLobbyJoin.onkeydown = ({key}) => {
+    if (key === 'Enter') Ui.buttonLobbyJoin.click();
   }
   Ui.buttonLobbyJoin.onclick = _ => {
     _server.sendLobbyJoin(Ui.inputLobbyJoin.value);
@@ -328,11 +341,9 @@ function connect(name) {
       Ui.buttonLobbyCreate.classList.toggle('hidden', false);
       Ui.buttonLobbyExit.classList.toggle('hidden', true);
       // Game elements
-      Ui.labelGameTimer.classList.toggle('hidden', true);
       Ui.buttonGameStart.classList.toggle('hidden', true);
       Ui.containerLobbySettings.classList.toggle('hidden', true);
-      Ui.labelLobbyPainter.classList.toggle('hidden', true);
-      Ui.labelGameMessage.classList.toggle('hidden', true);
+      Ui.containerGame.classList.toggle('hidden', true);
       Ui.inputGameWord.classList.toggle('hidden', true);
       Ui.buttonGameSend.classList.toggle('hidden', true);
     });
@@ -353,11 +364,9 @@ function connect(name) {
       Ui.footerControls.classList.toggle('hidden', true);
       Ui.content.classList.toggle('hidden', true);
       // Game elements
-      Ui.labelGameTimer.classList.toggle('hidden', true);
-      Ui.labelLobbyPainter.classList.toggle('hidden', true);
       Ui.buttonGameStart.classList.toggle('hidden', true);
       Ui.containerLobbySettings.classList.toggle('hidden', true);
-      Ui.labelGameMessage.classList.toggle('hidden', true);
+      Ui.containerGame.classList.toggle('hidden', true);
       Ui.inputGameWord.classList.toggle('hidden', true);
       Ui.buttonGameSend.classList.toggle('hidden', true);
       // Lobby elements
@@ -380,7 +389,7 @@ function connect(name) {
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', true);
       Ui.containerLobbySettings.classList.toggle('hidden', true);
-      Ui.labelGameMessage.classList.toggle('hidden', false);
+      Ui.containerGame.classList.toggle('hidden', false);
       Ui.labelGameMessage.innerHTML = `Game Started... ${rounds} round${rounds === 1 ? '' : 's'}`
       // Paint elements
       Ui.content.classList.toggle('hidden', false);
@@ -395,10 +404,21 @@ function connect(name) {
       Ui.labelLobbyPainter.classList.toggle('hidden', false);
       Ui.labelLobbyPainter.innerHTML = `Painter: ${painter}`;
       if (displayName === painter) {
-        Ui.inputGameWord.innerHTML = "";
-        Ui.inputGameWord.classList.toggle('hidden', false);
-        Ui.buttonGameSend.classList.toggle('hidden', false);
-        Ui.labelGameMessage.innerHTML = `Select a word: ${wordChoices.join(', ')}`;
+        Ui.labelGameMessage.innerHTML = 'Select a word:';
+        Ui.listWordChoices.classList.toggle('hidden', false);
+        Ui.listWordChoices.innerHTML = '';
+        wordChoices.forEach(word => {
+          let li = document.createElement('li');
+          let button = document.createElement('button');
+          button.innerHTML = word;
+          button.title = `button-${word}`;
+          button.onclick = _ => {
+            _server.sendGameGuessWord(word);
+            Ui.listWordChoices.innerHTML = '';
+          }
+          li.appendChild(button);
+          Ui.listWordChoices.appendChild(li);
+        });
       } else {
         Ui.labelGameMessage.innerHTML = `${painter} is selecting a word...`;
       }
@@ -408,8 +428,10 @@ function connect(name) {
       iAmPainter = (displayName === painter);
       Ui.footerControls.classList.toggle('hidden', !iAmPainter);
       if (iAmPainter) {
+        Ui.listWordChoices.innerHTML = '';
         Ui.labelGameMessage.innerHTML = `Paint word: ${wordChoice}`;
-        Ui.sliderLineWidth.setValue(drawStyle.lineWidth)
+        Ui.sliderLineWidth.setValue(drawStyle.lineWidth);
+        Ui.listWordChoices.classList.toggle('hidden', true);
         Ui.inputGameWord.classList.toggle('hidden', true);
         Ui.buttonGameSend.classList.toggle('hidden', true);
       } else {
@@ -450,15 +472,20 @@ function connect(name) {
       Ui.labelGameTimer.classList.toggle('hidden', true);
       gameStart = false; // Clear memo
       clearInterval(countdownInterval);
-      Ui.labelGameMessage.classList.toggle('hidden', true);
       Ui.labelGameMessage.innerHTML = ""
-      Ui.labelLobbyPainter.classList.toggle('hidden', true);
       Ui.labelLobbyPainter.innerHTML = ""
+      Ui.containerGame.classList.toggle('hidden', true);
       // Paint elements
       Ui.content.classList.toggle('hidden', true);
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner);
       Ui.containerLobbySettings.classList.toggle('hidden', !iAmOwner);
+    });
+    this.addEventListener(MSG_IN.StrokeStart, ({detail: {x, y}}) => {
+      // Initial paint from brush down
+      canvasContext.beginPath();
+      canvasContext.arc(x, y, drawStyle.lineWidth / 2, 0, 2 * Math.PI);
+      canvasContext.fill();
     });
     this.addEventListener(MSG_IN.Stroke, ({detail: {x, y}}) => {
       // Start point

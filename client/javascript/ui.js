@@ -102,6 +102,7 @@ export const inputDisplayName = document.getElementById('input-displayName')
 export const buttonDisconnect = document.getElementById('button-disconnect')
 
 export const containerLobbySettings = document.getElementById('container-lobby-settings');
+export const containerGame = document.getElementById('container-game');
 
 export const inputLobbySettingsRounds = document.getElementById('input-lobby-settings-rounds');
 export const inputLobbySettingsTimer = document.getElementById('input-lobby-settings-timer');
@@ -121,6 +122,7 @@ export const labelLobbyUsers = document.getElementById('label-lobby-users');
 export const labelLobbyPainter = document.getElementById('label-lobby-painter');
 export const labelGameMessage = document.getElementById('label-game-message');
 export const labelGameTimer = document.getElementById('label-game-timer');
+export const listWordChoices = document.getElementById('list-word-choices');
 export const footerControls = document.getElementById('footer-controls');
 
 export function syncCanvasSize() {

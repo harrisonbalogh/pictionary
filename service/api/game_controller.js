@@ -1,6 +1,15 @@
-import { SERVER_MESSAGE_OUT, ERROR_MESSAGES } from '@harxer/painter-lib';
+import { SERVER_MESSAGE_OUT, ERROR_MESSAGES } from '@harrisonbalogh/painter-lib';
 import { send, fail } from '../server.js';
 import User from '../models/user.js';
+
+/** Send stroke to all non-painters. @param {User} source Socket ID source. */
+export function strokeStart(source, { x, y }) {
+  let lobby = source.lobby;
+  if (lobby === undefined) return fail(source, ERROR_MESSAGES.Lobby.NotIn);
+  if (source !== lobby.painter) return fail(source, ERROR_MESSAGES.Lobby.NotPainter);
+
+  lobby.guessers.forEach(user => send(user, SERVER_MESSAGE_OUT.StrokeStart, { x, y }));
+}
 
 /** Send stroke to all non-painters. @param {User} source Socket ID source. */
 export function stroke(source, { x, y }) {

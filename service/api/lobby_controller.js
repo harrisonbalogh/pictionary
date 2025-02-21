@@ -1,5 +1,5 @@
 
-import { SERVER_MESSAGE_OUT, ERROR_MESSAGES, WS_SOCKET_CLOSE_CODE_NORMAL } from '@harxer/painter-lib';
+import { SERVER_MESSAGE_OUT, ERROR_MESSAGES, WS_SOCKET_CLOSE_CODE_NORMAL } from '@harrisonbalogh/painter-lib';
 import { send, fail, nameAvailable } from '../server.js';
 import Lobby from '../models/lobby.js';
 import User from '../models/user.js';
