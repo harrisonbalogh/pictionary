@@ -10,7 +10,7 @@ const SOCKET_OPEN = ws.OPEN
 const MESSAGE_OUT_TYPES = Object.values(SERVER_MESSAGE_OUT);
 
 const WebSocketServer = ws.Server
-const WEBSOCKET_PORT = process.env.PORT || 8082;
+const WEBSOCKET_PORT = process.env.PORT || 10004;
 
 /** Amount of time user has to send displayName @type {int} in milliseconds */
 const INIT_RESPONSE_TIMER = 3000;
