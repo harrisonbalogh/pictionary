@@ -113,6 +113,8 @@ export const inputGameWord = document.getElementById('input-game-word');
 export const buttonGameSend = document.getElementById('button-game-send');
 export const buttonGameStart = document.getElementById('button-game-start');
 
+export const textBadGuess = document.getElementById('text-bad-guess');
+
 export const colorPalette = document.getElementById('color-palette');
 
 export const labelUserId = document.getElementById('label-user-id');

@@ -4,7 +4,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@harrisonbalogh/painter-lib": "^0.0.3"
+    "@harrisonbalogh/painter-lib": "^0.0.4"
   },
   "private": true
 }

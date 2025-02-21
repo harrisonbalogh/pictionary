@@ -15,6 +15,7 @@ export const GAME_EVENTS = {
   PaintHint: 'paint_hint',
   Intermission: 'intermission',
   CorrectGuess: 'user_correct',
+  BadGuess: 'user_incorrect',
   Ended: 'ended'
 }
 
@@ -383,6 +384,11 @@ export default function GameState(users, {hintCount, rounds, timer, wordChoiceCo
       if (this._current.users.length - 1 === this._current.correctUsers.length) {
         this._advanceGame();
       }
+    } else {
+      this._data.eventHandler(GAME_EVENTS.BadGuess, {
+        guesser: source,
+        word
+      });
     }
   }
 

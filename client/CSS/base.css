@@ -268,3 +268,8 @@ select {
 #label-game-message {
   display: inline-block;
 }
+
+#text-bad-guess {
+  border: 1px solid white;
+  padding: 6px;
+}

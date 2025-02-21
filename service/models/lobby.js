@@ -9,7 +9,7 @@ const STROKE_SETTINGS_DEFAULT = {
 }
 const GAME_SETTINGS_DEFAULT = {
   ROUNDS: 3,
-  TIMER: 30 * 1000,
+  TIMER: 60 * 1000,
   WORD_CHOICE_COUNT: 3,
   HINT_COUNT: 2,
 }
@@ -176,6 +176,10 @@ export default function Lobby() {
     if (event === GAME_EVENTS.CorrectGuess) {
       let { userPoints, guesser } = data;
       this.guessers.concat(this.painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventCorrectGuess, { userPoints, guesser: guesser.displayName }));
+    } else
+    if (event === GAME_EVENTS.BadGuess) {
+      let { word, guesser } = data;
+      this.guessers.concat(this.painter).forEach(user => send(user, SERVER_MESSAGE_OUT.GameEventIncorrectGuess, {  word, guesser: guesser.displayName }));
     } else
     if (event === GAME_EVENTS.Intermission) {
       let { timeRemaining } = data;

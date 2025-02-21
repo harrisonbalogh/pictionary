@@ -319,6 +319,7 @@ function connect(name) {
       Ui.inputLobbySettingsHintCount.value = hintCount;
       Ui.containerLobbySettings.classList.toggle('hidden', !iAmOwner || gameStart);
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner || gameStart);
+      Ui.textBadGuess.classList.toggle('hidden', !gameStart);
     });
     this.addEventListener(MSG_IN.LobbyExited, () => {
       gameStart = false; // Clear memo
@@ -342,6 +343,7 @@ function connect(name) {
       Ui.buttonLobbyExit.classList.toggle('hidden', true);
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.textBadGuess.classList.toggle('hidden', true);
       Ui.containerLobbySettings.classList.toggle('hidden', true);
       Ui.containerGame.classList.toggle('hidden', true);
       Ui.inputGameWord.classList.toggle('hidden', true);
@@ -365,6 +367,7 @@ function connect(name) {
       Ui.content.classList.toggle('hidden', true);
       // Game elements
       Ui.buttonGameStart.classList.toggle('hidden', true);
+      Ui.textBadGuess.classList.toggle('hidden', true);
       Ui.containerLobbySettings.classList.toggle('hidden', true);
       Ui.containerGame.classList.toggle('hidden', true);
       Ui.inputGameWord.classList.toggle('hidden', true);
@@ -387,6 +390,8 @@ function connect(name) {
       canvasContext.fillRect(0, 0, view.width, view.height)
       canvasContext.fillStyle = drawStyle.color;
       // Game elements
+      Ui.textBadGuess.innerHTML = '';
+      Ui.textBadGuess.classList.toggle('hidden', false);
       Ui.buttonGameStart.classList.toggle('hidden', true);
       Ui.containerLobbySettings.classList.toggle('hidden', true);
       Ui.containerGame.classList.toggle('hidden', false);
@@ -451,13 +456,17 @@ function connect(name) {
     this.addEventListener(MSG_IN.GameEventCorrectGuess, ({detail: {userPoints, guesser}}) => {
       if (guesser === displayName) {
         let pts = userPoints[displayName];
-        Ui.labelGameMessage.innerHTML = `You guessed correctly! +${pts} points`;
+        Ui.labelGameMessage.innerHTML = `Waiting for others to guess...`;
+        Ui.textBadGuess.innerHTML = `<i>You guessed correctly! +${pts} points</i><br>` + Ui.textBadGuess.innerHTML
         Ui.inputGameWord.classList.toggle('hidden', true);
         Ui.buttonGameSend.classList.toggle('hidden', true);
         releaseBrush();
       } else {
-        // console.log(`${guesser} guessed correctly!`, userPoints);
+        Ui.textBadGuess.innerHTML = `<i>${guesser} guessed correctly!</i><br>` + Ui.textBadGuess.innerHTML
       }
+    });
+    this.addEventListener(MSG_IN.GameEventIncorrectGuess, ({detail: {word, guesser}}) => {
+      Ui.textBadGuess.innerHTML = `<b>${guesser}:</b> ${word}<br>` + Ui.textBadGuess.innerHTML;
     });
     this.addEventListener(MSG_IN.GameEventIntermission, ({detail: {timeRemaining}}) => {
       iAmPainter = false;
@@ -478,6 +487,7 @@ function connect(name) {
       // Paint elements
       Ui.content.classList.toggle('hidden', true);
       // Game elements
+      Ui.textBadGuess.classList.toggle('hidden', true);
       Ui.buttonGameStart.classList.toggle('hidden', !iAmOwner);
       Ui.containerLobbySettings.classList.toggle('hidden', !iAmOwner);
     });
